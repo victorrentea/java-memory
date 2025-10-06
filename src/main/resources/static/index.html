@@ -1,0 +1,81 @@
+<!--<h3>Memory Leaks</h3>-->
+<ul>
+    <li><a href="leak0">0) OOME Intentional</a> 👉 JVM dumps and dies☠️</li>
+    <li><a href="leak1">1) Long Stack Frame</a></li>
+    <li>2) Hidden Links:
+        <ul>
+            <li><a href="leak2/inner">Inner Class 🧩</a> ≤ javac 17</li>
+            <li><a href="leak2/implem">Anonymous Impl</a> ≤ javac 17</li>
+            <li><a href="leak2/subclass">new HashMap() {{</a></li>
+        </ul>
+    </li>
+    <li><a href="leak3">3) SubList</a> 🔥</li>
+    <li><a href="leak4">4) XML DOM</a></li>
+    <li><a href="leak5">5) Magic 🪄✨</a>±🔥</li>
+    <li><a href="leak5/lib">5) ThreadLocal Cache + Virtual Threads</a> 🔥</li>
+    <li>6) Async process after <a href="leak6/download">Download</a>±🔥 or <a href="leak6">Upload</a></li>
+    <li><a href="leak7">7) Thread Leak</a></li>
+    <li>8) Deadlock: <a href="leak8">Basic</a> and <a href="leak9/one">Pro🥇🔥</a></li>
+    <li><a href="leak10">10) Old lib ♾️</a></li>
+    <li><a href="leak11/caller">11) Invisible Source</a>🔥</li>
+    <li>12) Caching:
+        <a href="leak12">#1</a>,
+        <a href="leak12/signature">#2</a>,
+        <a href="leak12/objectKey">#3</a>,
+        <a href="leak12/mutableKey">#4</a>
+    </li>
+    <li><a href="leak13">13) ORM 1st level cache</a></li>
+    <li><a href="leak14">14) ClassLoader Leak</a></li>
+    <li><a href="leak15">15) Direct Memory (off-heap)</a></li>
+    <li>16) GUI Observer (standalone)
+    <hr>
+    </li>
+</ul>
+<a href="/actuator/health">health</a> <br>
+<a href="/actuator/prometheus">metrics</a>
+<!--
+<ul>
+    <li>17) Thread Starvation: Call <a href="leak17">a Hot Endpoint</a>🔥 in a short time
+        <a href="#" onclick="callNTimes('leak17', 200)">200 times</a>
+         to get a timeout at <a href="leak17/liveness">/liveness</a> ☠️
+    </li>
+    <li>18) Manual Connections (early 2000s):
+        <a href="leak18?origin=jfk&destination=otp">Good✅</a>,
+        <a href="leak18?destination=otp">BAD❌</a>,
+        After 10 BAD❌ calls, JDBC pool remains empty -> the app cannot reach DB anymore. <a href="/actuator/health">/health</a>
+    </li>
+    <li><a href="leak29">29) Session (stateful)</a></li>
+
+</ul>
+
+<script>
+    function callNTimes(url, n) {
+        for (let i = 0; i < n; i++) {
+            open(url); // fetch is limited to 4-8 / tab
+        }
+    }
+</script>
+<h1>Profile flows</h1>
+Add -javaagent:glowroot.jar to app startup params (like explained <a href="https://glowroot.org/https://glowroot.org/">here</a>), <br />
+and then open glowroot on this app: <a href="http://localhost:4000" target="_blank">http://localhost:4000</a>. Go <a href="http://localhost:4000/admin/storage" >here</a> to delete all glowroot's data.
+<ul>
+    <li><a href="profile/export">A naive export</a></li>
+    <li><a href="profile/nplus1">N plus 1 queries</a></li>
+    <li><a href="profile/cpu">Strange CPU activity</a></li>
+    <li><a href="profile/long-query">Long Query</a></li>
+    <li>Connection Pool/Thread Exhaustion
+        <ul>
+            <li><a href="profile/sheep/create">create</a> - takes ~1 sec under stress due to calling Sheppard API</li>
+            <li><a href="profile/sheep/search">search</a> - DB-only, used to fill the list in homepage (<span style="color: red">hot path</span>)</li>
+        </ul>
+        Test them with 10, 30, 400 parallel requests : search should behave &lt; 50 ms (SLA)
+    </li>
+    <li><a href="profile/jaxb?xml=<records><record><a>a0</a><b>b0</b><value>0</value></record><record><a>a1</a><b>b1</b><value>1</value></record></records>">
+        Unknown Framework eating a lot of CPU</a>
+    </li>
+    <li><a href="profile/profile/javalock">Contention on a Java Lock (synchronized)</a></li>
+    <li><a href="profile/profile/dblock">Contention on a DB Row Lock (SELECT FOR UDPATE)</a></li>
+    <li><a href="profile/tlab">Allocate large contiguous objects</a></li>
+    <li><a href="profile/httpclient">Unexpected bottleneck in unknown framework</a></li>
+</ul>
+-->
