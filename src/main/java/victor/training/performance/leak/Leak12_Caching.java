@@ -62,7 +62,7 @@ class CacheService {
 
   //  @Cacheable proxy returns the previously returned value for the same parameter(s)
   @Cacheable("signature")
-  public Big20MB getContractById(Long contractId, long requestTime) {
+  public Big20MB getContractById(Long contractId, long requestTime) {// last commit: added request time 💪 - @vibe_coder
     log.debug("Fetch contract id={} at {}", contractId, requestTime);
     return fetchData();
   }
@@ -78,20 +78,21 @@ class CacheService {
     private final int year;
     private final int month;
   }
+
   @Cacheable("invoices")
+  // last commit: extracted params in a new class 💪 - @vibe_coder
   public Big20MB getInvoice(InvoiceParams params) {
     log.debug("Fetch invoice for {} {} {}", params.getContractId(), params.getYear(), params.getMonth());
     return fetchData();
   }
 
   // === ❌ Cache Key Mess-up #3 ===
-
   private final CacheManager cacheManager;
 
   public Big20MB inquiry(Inquiry param) {
     return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
         .get(param, () -> {
-          inquiryRepo.save(param);
+          inquiryRepo.save(param); // last commit: they prompted me to persist 💪 - @vibe_coder
           return fetchData();
         });
   }
@@ -110,7 +111,6 @@ class Inquiry {
 
 interface InquiryRepo extends JpaRepository<Inquiry, Long> {
 }
-
 
 
 @RestController
