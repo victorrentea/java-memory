@@ -5,11 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import victor.training.performance.leak.obj.Big;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static victor.training.performance.util.PerformanceUtil.KB;
 import static victor.training.performance.util.PerformanceUtil.done;
 
 @SuppressWarnings("FieldMayBeFinal")
@@ -19,12 +21,12 @@ import static victor.training.performance.util.PerformanceUtil.done;
 public class Leak3_SubList {
   private List<Access> lastTen = new ArrayList<>();
 
-  record Access(String ip, LocalDateTime timestamp) {
+  record Access(String ip, LocalDateTime timestamp, Big big) {
   }
 
   @GetMapping
   public synchronized String endpoint(HttpServletRequest request) {
-    Access access = new Access(request.getRemoteAddr() + ":" + request.getRemotePort(), LocalDateTime.now());
+    Access access = new Access(request.getRemoteAddr() + ":" + request.getRemotePort(), LocalDateTime.now(), new Big(KB(1)));
 
     lastTen.add(access);
     if (lastTen.size() > 10) {
