@@ -37,8 +37,6 @@ import static victor.training.performance.util.PerformanceUtil.done;
 @Slf4j
 @RequiredArgsConstructor
 class CacheService {
-  private final InquiryRepo inquiryRepo;
-
   private Big20MB fetchData() {
     return new Big20MB();
   }
