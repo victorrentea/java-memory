@@ -147,8 +147,9 @@ public class Leak12_Caching {
   }
 
   @GetMapping("mutableKey")
-  public String mutable() {
-    Big20MB data = cacheService.inquiry(new Inquiry().setYearValue(2025).setMonthValue(10));
+  public String mutableKey() {
+    Inquiry inquiry = new Inquiry().setYearValue(2025).setMonthValue(10);
+    Big20MB data = cacheService.inquiry(inquiry);
     return "Invoice = " + data + ", " + PerformanceUtil.getUsedHeapHuman();
   }
 }
