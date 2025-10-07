@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -18,9 +19,14 @@ import java.util.Set;
 public class IdempotencyFilter extends HttpFilter {
   private final Set<Call> previousCalls = Collections.synchronizedSet(new HashSet<>());
 
-  record Call(String idempotencyKey) {}
+  record Call(String idempotencyKey, long ts) {}
 
-  // FIXME: clear every second calls older than 3 seconds (dedup window)
+  @Scheduled(fixedRate = 1000)
+  public void clearOldCalls() {
+    log.info("Clearing old calls. Current size: {}", previousCalls.size());
+    long threshold = System.currentTimeMillis() - 3000;
+    previousCalls.removeIf(call -> call.ts < threshold);
+  }
 
   @Override
   protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -30,7 +36,9 @@ public class IdempotencyFilter extends HttpFilter {
         reject(response, "Missing request header 'Idempotency-Key'");
         return;
       }
-      boolean newIK = previousCalls.add(new Call(idempotencyKey));
+//      boolean newIK = previousCalls.add(new Call(idempotencyKey, System.currentTimeMillis()));
+      boolean newIK = previousCalls.stream().noneMatch(call -> call.idempotencyKey.equals(idempotencyKey));
+      previousCalls.add(new Call(idempotencyKey, System.currentTimeMillis()));
       if (!newIK) {
         reject(response, "Duplicate call rejected!");
         return;

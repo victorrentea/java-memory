@@ -17,6 +17,8 @@ public class Leak10_ShutdownHook {
   @GetMapping("leak10")
   public String add() throws Exception {
     String result = OldLib.doWork();
+//    Runtime.getRuntime().sh
+    clearHooksUsingReflection();
     return "♾️ Leak doing " + result + done();
   }
 

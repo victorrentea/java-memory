@@ -5,10 +5,7 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -45,17 +42,25 @@ class CacheService {
   // === ❌ Anti-Pattern: Manual Cache ===
   Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
   // My wheel is the best wheel 🛞
+  @Cacheable("fex-cache")
   public Big20MB getTodayFex(LocalDate date) {
-    return fexCache.computeIfAbsent(date, d -> {
-      log.debug("Fetch data for date: {}", date);
-      return fetchData();
-    });
+//    return fexCache.computeIfAbsent(date, d -> {
+    log.debug("Fetch data for date: {}", date);
+    return fetchData();
+//    });
   }
+  // the no of keys in this naive cache *SHOULD* be limited
 
   @Bean
   MeterBinder fexCacheMetrics() {// 🔔ALARM on this
-    return registry -> Gauge.builder("fex_cache_size", fexCache, Map::size).register(registry);
+    return registry ->
+        Gauge.builder("fex_cache_size", fexCache, Map::size).register(registry);
   }
+
+
+
+
+
 
   // === ❌ Cache Key Mess-up #1 ===
   @Cacheable("signature") // a proxy returns the previous value for the same parameter(s)
@@ -65,20 +70,15 @@ class CacheService {
     return fetchData();
   }
 
+
   // === ❌ Cache Key Mess-up #2 ===
-  @RequiredArgsConstructor
-  @Getter
-  @Setter
-  static class InquiryParams {
-    private final UUID contractId;
-    private final int year;
-    private final int month;
+  record InquiryParams(UUID contractId, int year, int month) {
   }
 
   @Cacheable("invoices")
   // last commit: extracted params in a new class 💪 - @vibe_coder😎
   public Big20MB inquiryKey(InquiryParams params) {
-    log.debug("Fetch invoice for {} {} {}", params.getContractId(), params.getYear(), params.getMonth());
+    log.debug("Fetch invoice for {} {} {}", params.contractId(), params.year(), params.month());
     return fetchData();
   }
 
@@ -86,11 +86,11 @@ class CacheService {
   private final CacheManager cacheManager;
 
   public Big20MB inquiryKey1(Inquiry inquiry) {
-    return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
-        .get(inquiry, () -> {
-          inquiryRepo.save(inquiry); // last commit: they prompted me to save it - @vibe_coder😎
-          return fetchData();
-        });
+    Big20MB v = cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
+        .get(inquiry, () -> fetchData()); //  map.put(inquiry, ...)
+    inquiryRepo.save(inquiry); // last commit: they prompted me to save it - @vibe_coder😎
+    // when you add the object to the hashmark behind, it has code is computed on the value without the ID assigned. It's getting into a bucket but when you call it again next time you will be looking in that bucket, but remember the first object was assigned the ID after so although it is in the proper bucket equals will never match because that one in the cash has an ID once your new key doesn't
+    return v;
   }
 
   // === ❌ Cache Key Mess-up #4 ===
@@ -107,7 +107,7 @@ class CacheService {
 class Inquiry {
   @GeneratedValue
   @Id
-  Long id;
+  Long id; // MUTABLE!
   UUID contractId;
   int yearValue;
   int monthValue;

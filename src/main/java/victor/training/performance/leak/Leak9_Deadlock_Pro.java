@@ -25,6 +25,9 @@ public class Leak9_Deadlock_Pro {
     Big1KB obj = new Big1KB();
     log.info("Start one with {} on stack", obj);
     mapA.compute(a, (k, v) -> (v == null ? "" : v) + process(a) + mapB.get(a));
+    // redis lock A then B
+    // redis lock A then select for update SQL B
+    // synchronized + select for update SQL B
     log.info("End one");
     return howtoDeadlockInstructions("two");
   }

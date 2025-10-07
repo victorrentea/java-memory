@@ -2,9 +2,11 @@ package victor.training.performance.leak;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,11 +18,13 @@ import static victor.training.performance.util.PerformanceUtil.*;
 @RestController
 @RequiredArgsConstructor
 public class Leak7_ThreadLeak {
+  private final ThreadPoolTaskExecutor myExecutor;
+
   @GetMapping("leak7")
   public String endpoint() throws ExecutionException, InterruptedException {
-    ExecutorService pool = Executors.newFixedThreadPool(2);
-    var f1 = pool.submit(() -> apiCallA());
-    var f2 = pool.submit(() -> apiCallB());
+//    ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
+    var f1 = CompletableFuture.supplyAsync(Leak7_ThreadLeak::apiCallA,myExecutor);
+    var f2 = CompletableFuture.supplyAsync(Leak7_ThreadLeak::apiCallB,myExecutor);
     return f1.get() + f2.get() + done() + "<p>" + getUsedHeapHuman() + "<p>" + getProcessMemoryHuman();
   }
 
@@ -28,6 +32,7 @@ public class Leak7_ThreadLeak {
     sleepMillis(100);
     return "A";
   }
+
   private static String apiCallB() {
     sleepMillis(100);
     return "B";

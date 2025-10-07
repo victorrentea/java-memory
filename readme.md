@@ -30,8 +30,50 @@ Memory Leaks@Devoxx.bex§
 
 
 @Pin Tegelaar: Defragmented native app
-@Philip Aricks: Billin laughs attack
-@Philip Aricks: log.debug("aaa" + hugeTree.toString());
+
+@Philip Aricks: Billion laughs attack
+
+@Philip Aricks: log.trace("aaa" + hugeTree);
+    ~>log.trace("aaa{}", hugeTree);
+    ~>log.onTrace().log(()->"aaa"+ hugeTree);
+
+@Ruben Lommelen: deserialize a class => OOME attack
+
+@Christian: nested tx (REQUIRES_NEW, or NOT_SUPPORTED calle from TX) can deadlock 2 theads 
+10 threads 
+10 connections in pool
+each thread needs 2 connections
+all 10 take 1.
+all 10 wait for a free conn. But the other 9 are doing the same
+!!! -nin a payment processor
+
+
+@ in  insurance domain
+ claim->child->associations(medical, diagnosis..)
+ kafka listener
+ external publishes us claims
+ we convert them into our internal model
+ some data is not mapped yet.
+ they pushed us a spike of 20000K unmapped medical records
+ a microservice maps them and publishes "record mapped event"
+ reacting on that in the kafka listener we replace the old medical record with this new one 
+ we consumed on ?threads
+ kafka consumer batch size was 500 (default) we reduced it to 50 
+ to not out of memory x N consumers / app (kafka.concurrency = 3)
+ => "fat messges" since they were RAW (unmapped) NO!
+
+for every single ONE message received we loaded the entire Aggregate with hundreds of objects from DB.
+FIX: reduce kafka.concurrency to 1 (=> /3 RAM)
+FIX: increase pod memory (agains OPS) but traded with elastic instance min:1 + started on a schedule
+FIX: cheat on DDD and got native SQL to change (BAD)
+??? Inspect a heapdump=> there should only be 1 claim loaded from DB at any given point in time.
+FIX: split transactions: for (claim having the record) {statrt TX, java>update commit} => not entirely ATOMIC per message.
+FIX:
+ entityManager.save(claim);
+entityManager.flush(); x§
+entityManager.clear(); between the 10K claims you loaded in a for + dereference aggregates changed
+
+
 
 
 

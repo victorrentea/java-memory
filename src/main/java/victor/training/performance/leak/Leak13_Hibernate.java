@@ -35,12 +35,13 @@ public class Leak13_Hibernate {
   private final EntityManager entityManager;
 
   @GetMapping("leak13/export")
-  @Transactional
+  @Transactional(readOnly = true)
   public String export() throws IOException {
     File file = new File("big-entity-export.txt");
     log.debug("Exporting from DB to {}...", file.getAbsolutePath());
     try (PrintWriter writer = new PrintWriter(file)) {
       repo.streamAll() // iterates rows w/o loading all ≈ while(resultSet.next()) {👴🏻
+          .peek(entityManager::detach) // forget about t
           .map(BigEntity::getDescription)
           .forEach(writer::write);
     }
