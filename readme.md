@@ -1,6 +1,4 @@
 Memory Leaks@Devoxx.be
-
-Plan:
 0. OOME = 5m ⭐️slide: prep
 1. LongFrame = 3m
 2. inner (≤javac 17)  -> visualVM = 5m
