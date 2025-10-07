@@ -21,7 +21,7 @@ import java.util.List;
 public class Leak14_ClassLoader {
   private static Class<?> classLoadPlugin(File classFile) throws MalformedURLException, ClassNotFoundException {
     URL currentFolderUrl = classFile.getParentFile().toURI().toURL();
-    // separate classloader prevents classname conflicts
+    // separate classloader prevents class name conflicts
     ClassLoader classLoader = URLClassLoader.newInstance(new URL[]{currentFolderUrl});
     return Class.forName("Plugin", true, classLoader);
   }
@@ -29,7 +29,7 @@ public class Leak14_ClassLoader {
   @GetMapping("leak14")
   public String uploadNewPluginVersion() throws Exception {
     currentVersion++;
-    File classFile = compilePlugin(currentVersion);
+    File classFile = compile(currentVersion);
     Class<?> clazz = classLoadPlugin(classFile);
 
     // Case1: plugin.jar/webapp.war starts a thread
@@ -53,11 +53,10 @@ public class Leak14_ClassLoader {
 
   static List<Object> plugins = new ArrayList<>();
 
-  public File compilePlugin(int version) throws IOException {
+  public File compile(int version) throws IOException {
     // We have to compile a .class on the fly so that it's NOT in target/classes,
     // otherwise the call to URLClassCoader.loadClass("Plugin")
     // would be served by the top level app classloader - the class never loaded by the new URLClassLoader.
-
     //language=java
     File file = Files.writeString(Path.of("Plugin.java"), """
             public class Plugin {
