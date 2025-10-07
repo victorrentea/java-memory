@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,17 +34,26 @@ import static victor.training.performance.util.PerformanceUtil.*;
 public class Leak6_Async {
   private final FileProcessor processor;
   private static final AtomicInteger counter = new AtomicInteger(0);
+  private final ThreadPoolTaskExecutor myExecutor;
 
   @GetMapping("leak6/download")
-  public String download() {
+//  @KafkaListener
+  public String download(/*String message*/) {
     int taskId = counter.incrementAndGet();
+
+
+
+
+
+
     MDC.put("traceId", "" + taskId);
-    String data = fetchData(MB(10)); // Exaggeration? = same as smaller hit at higher RPS
+    String data = fetchData(MB(10)); // 🪣/ftp Exaggeration? = same as smaller hit at higher RPS
     log.info("Got {} bytes", data.length());
-    CompletableFuture.runAsync(() -> processor.process(data, taskId));
+//    CompletableFuture.runAsync(() -> processor.process(data, taskId),myExecutor);
+    processor.process(data, taskId);
     // Bad .commonPool(): unbounded queue, no lifting of ThreadLocal, competition vs other CF + parallelStream
-    // Bad CompletableFuture: exceptions easily lost
-    // Bad: keep large blobs in memory
+    // Bad CompletableFuture: exceptions easily lost ~>@Async
+    // Bad: keep large blobs in memory~>save it somewhere out of HEAP: files,Mongo,SQL,S3
     return """
         Long task submitted: #%d<br>
         Data in memory: %,d bytes<br>
@@ -57,8 +67,10 @@ public class Leak6_Async {
 @Slf4j
 @Service
 class FileProcessor {
+  @Async("myExecutor")
   public void process(String contents, int taskId) {
     log.debug("Task {} started ...", taskId);
+//    if (true) throw new RuntimeException("BUG🐞");
     sleepSeconds(10);
     long newLinesCount = contents.chars().filter(c -> c == 10).count();
     log.debug("Task {} completed: counted {} lines", taskId, newLinesCount);
@@ -101,8 +113,8 @@ class Leak6Config {
     executor.initialize();
     // lift ThreadLocal data from the submitter thread:
     executor.setTaskDecorator(task -> {
-      var submitterMDC = MDC.getCopyOfContextMap();
-      return () -> {
+      var submitterMDC = MDC.getCopyOfContextMap();// runs in submitter
+      return () -> { // runs in worker
         try {
           MDC.setContextMap(submitterMDC);
           task.run();

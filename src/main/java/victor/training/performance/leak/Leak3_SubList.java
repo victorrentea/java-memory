@@ -9,6 +9,7 @@ import victor.training.performance.leak.obj.Big;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import static victor.training.performance.util.PerformanceUtil.KB;
@@ -19,7 +20,7 @@ import static victor.training.performance.util.PerformanceUtil.done;
 @RestController
 @RequestMapping("leak3")
 public class Leak3_SubList {
-  private List<Access> lastTen = new ArrayList<>();
+  private List<Access> lastTen = new LinkedList<>();
 
   record Access(String ip, LocalDateTime timestamp, Big big) {
   }
@@ -30,7 +31,8 @@ public class Leak3_SubList {
 
     lastTen.add(access);
     if (lastTen.size() > 10) {
-      lastTen = lastTen.subList(1, lastTen.size()); // remove first
+//      lastTen = lastTen.subList(1, lastTen.size()); // remove first
+      lastTen.remove(0);
     }
     return "lastTen.size = " + lastTen.size() + done();
   }

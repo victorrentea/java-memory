@@ -74,10 +74,15 @@ class CalculatorFactory {
 
   //<editor-fold desc="Map init in Java <= 8">
   public Map<String, Integer> mapInit() {
-    return new HashMap<>() {{
-      put("one", 1);
-      put("two", 2);
-    }};
+//    return new HashMap<>() { // subclass
+//      { // instance init block
+//      put("one", 1);
+//      put("two", 2);
+//    }};
+    return Map.of( // Java 9+
+        "one", 1,
+        "two", 2
+    );
   }
   //</editor-fold>
 }

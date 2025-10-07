@@ -14,6 +14,7 @@ public class Leak5Lib_ThreadLocalCache {
   public String endpoint() throws NoSuchFieldException, IllegalAccessException {
     String work = Library.method();
     // no further use of lib on this flow
+    clearLibraryThreadLocalsViaReflection();
     sleepMillis(300); // my application logic
     return "Manifests under high RPS on Virtual Threads<br>Now on thread: " + Thread.currentThread() + done();
   }

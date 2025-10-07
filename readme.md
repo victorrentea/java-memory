@@ -27,6 +27,14 @@ Memory Leaks@Devoxx.bex§
 15. Direct Memory = 5m
 16. GUI observer = 4m
 
+
+
+@Pin Tegelaar: Defragmented native app
+@Philip Aricks: Billin laughs attack
+@Philip Aricks: log.debug("aaa" + hugeTree.toString());
+
+
+
 BEFORE start:
 - javac 17 (pom.xml)
 - jre 21

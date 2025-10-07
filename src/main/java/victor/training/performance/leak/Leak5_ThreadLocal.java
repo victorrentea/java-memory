@@ -1,12 +1,16 @@
 package victor.training.performance.leak;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.annotation.RequestScope;
 import victor.training.performance.leak.obj.Big20MB;
 
 import static victor.training.performance.util.PerformanceUtil.done;
 import static victor.training.performance.util.PerformanceUtil.getUsedHeapHuman;
-
+//@RequestScope
+//@Component
+//class ManagedByWSpring
 @RestController
 public class Leak5_ThreadLocal {
   private static final ThreadLocal<RequestContext> threadLocal = new ThreadLocal<>();
@@ -19,7 +23,11 @@ public class Leak5_ThreadLocal {
     String currentUsername = "john.doe"; // from request header/JWT/http session
     threadLocal.set(new RequestContext(currentUsername, new Big20MB()));
 
-    service();
+    try {
+      service();
+    } finally {
+      threadLocal.remove();
+    }
 
     return "Magic can hurt " + done() + "<p>" + getUsedHeapHuman();
   }
