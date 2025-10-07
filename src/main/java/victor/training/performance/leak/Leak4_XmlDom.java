@@ -30,29 +30,28 @@ public class Leak4_XmlDom {
   private static final XPathFactory xPathFactory = XPathFactory.newInstance();
 
   static void main() { // runnable standalone too
-    new Leak4_XmlDom().countPlugins();
+    new Leak4_XmlDom().collectTags();
   }
 
   @GetMapping("leak4")
-  public void countPlugins() {
+  public void collectTags() {
     File xmlFile = new File("pom.xml");
-    log.info("Opening xml: " + xmlFile.getAbsolutePath());
+    log.info("Opening xml: {}", xmlFile.getAbsolutePath());
 
     List<Node> modelVersion = new ArrayList<>();
     for (int i = 0; i < LOTS_OF_XML_FILES; i++) {
-      modelVersion.addAll(extractElements(xmlFile, "//modelVersion"));
+      modelVersion.addAll(extractElements(xmlFile, "//java.version"));
     }
-    // <modelVersion>4.0.0</modelVersion>
+    // <java.version>17</java.version>
 
-    log.info("Found {} nodes", modelVersion.size());
+    log.info("Found {} elements", modelVersion.size());
     Node first = modelVersion.get(0);
     log.info("First: class={}, text: {}", first.getClass().getSimpleName(), first.getTextContent());
 
     sleepSeconds(30); // time to take a heap dump
   }
 
-  // TODO how many instances of DeferredElementImpl are in heapdump? Justify?
-  // eg RUN this in OQL in jvisualVM: select x.name from com.sun.org.apache.xerces.internal.dom.DeferredElementImpl x
+  // TODO how many instances of DeferredElementImpl are in heapdump? Explain?
 
   // === === === === === === === Support code  === === === === === === ===
 

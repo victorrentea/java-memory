@@ -8,8 +8,8 @@ import static victor.training.performance.util.PerformanceUtil.done;
 @RestController
 public class Leak11_UnknownSource {
   @GetMapping("leak11")
-  public String endpoint() {
-    return "Money transferred" + done();
+  public String transferMoney() {
+    return "Money transferred " + done();
   }
 }
 
