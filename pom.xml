@@ -9,7 +9,7 @@
     </parent>
 
     <groupId>victor.training</groupId>
-    <artifactId>performance</artifactId>
+    <artifactId>java-memory</artifactId>
     <version>1.0</version>
 
     <properties>
