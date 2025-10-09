@@ -83,11 +83,11 @@ class Leak6Config {
   @SuppressWarnings("resource")
   @Bean
   MeterBinder exposeMetrics_ofCommonForkJoinPool() {
-    ForkJoinPool pool = ForkJoinPool.commonPool();
+    ForkJoinPool commonPool = ForkJoinPool.commonPool();
     return registry -> {
-      Gauge.builder("fjp_cp__total_submitted", pool, ForkJoinPool::getStealCount).register(registry);
-      Gauge.builder("fjp_cp__thread_pool_size", pool, ForkJoinPool::getPoolSize).register(registry);
-      Gauge.builder("fjp_cp__queue_size", pool, p -> (double) p.getQueuedSubmissionCount()).register(registry);
+      Gauge.builder("fjp_cp__total_submitted", commonPool, ForkJoinPool::getStealCount).register(registry);
+      Gauge.builder("fjp_cp__thread_pool_size", commonPool, ForkJoinPool::getPoolSize).register(registry);
+      Gauge.builder("fjp_cp__queue_size", commonPool, p -> (double) p.getQueuedSubmissionCount()).register(registry);
     };
   }
 
