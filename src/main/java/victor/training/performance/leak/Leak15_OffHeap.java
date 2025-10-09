@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Executable;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
 import static victor.training.performance.util.PerformanceUtil.*;
@@ -17,6 +18,9 @@ public class Leak15_OffHeap {
 
   @GetMapping("leak15")
   public String offHeap() {
+//    ConcurrentHashMap<Object, Object> objectObjectConcurrentHashMap = new ConcurrentHashMap<>();
+//objectObjectConcurrentHashMap.entrySet()
+    //    Class.
     log.info("start");
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(MB10);
     sleepSeconds(2);

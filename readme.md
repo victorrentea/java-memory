@@ -75,6 +75,30 @@ entityManager.clear(); between the 10K claims you loaded in a for + dereference 
 
 
 
+CDI @Dependent bean fetched using Cdi.current.select(Bean) from a non-CDI managed instance without .dispose!!
+
+
+
+@Alexei Semenov: Groovy scripts used a lib to generate new .class with random name dynamically compiling groovy scripts on the fly pe request.
+these new dynamic classes loaded, were never unloaded.
+
+
+@Alexei Semenov: IoT -> one instance holding ConcurrentHashMap<SensorId, Queue<Values>> we have to consume those values very fast.
+ConcurrHM to NOT block the sensor HTTP request.
+the values in the map was drained from 10 threads in a busy loop.-
+1000.000.000 Map.Entries in the map because we <-__ TODO 
+Fix: changed to readwritelock when put/get in the map.
+get
+
+
+@Timon Borter -
+you added to a list of Citrus testing framework a java repr of an OpenAPI
+if (citrus.containsBean(openApi)) {/// ideal, but missing!
+if (aplicationContext.containsBean(openApi)) {
+    citrus.add(openApi)
+}
+in the newer version of citrus, they did not register it as beansanymore => we kept adding 
+an integration test would have saved us 
 
 
 BEFORE start:
