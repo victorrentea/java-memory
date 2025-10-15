@@ -53,3 +53,5 @@ capture/
 /file-to-upload.txt
 /Plugin.java
 /big-entity.txt
+/expected.xml
+/lolbomb.xml
