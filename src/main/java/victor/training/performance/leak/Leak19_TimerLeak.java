@@ -2,6 +2,7 @@ package victor.training.performance.leak;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jaxb.core.v2.TODO;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,8 +36,7 @@ public class Leak19_TimerLeak {
             .id(String.valueOf(i));
         try {
           emitter.send(event);
-        } catch (Exception e) { // TO-DO what?
-        }
+        } catch (Exception e) { /*TO-DO*/ }
         sleepMillis(500);
       }
     }, 0, 500, TimeUnit.MILLISECONDS);
