@@ -43,7 +43,7 @@ public class ThreadLocalDemo {
 }
 
 class Holder {
-  public static ThreadLocal<String> currentUser = new ThreadLocal<>();
+  public static String currentUser;
 }
 
 @RestController
@@ -79,19 +79,19 @@ class MyRepo {
 
 // @Configuration
 class ThreadPoolConfig {
-  // region executorPropagatingThreadLocal
+  // region executorPropagatingThreadLocal TODO
   @Bean
   public ThreadPoolTaskExecutor executorPropagatingThreadLocal() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
     executor.setCorePoolSize(5);
     executor.setTaskDecorator(runnable -> { // runs in submitter thread
-      String tenantId = Holder.currentUser.get();
+//      String tenantId = Holder.currentUser.get();
       return () -> { // runs in worker thread
-        Holder.currentUser.set(tenantId);
+//        Holder.currentUser.set(tenantId);
         try {
           runnable.run();
         } finally {
-          Holder.currentUser.remove();
+//          Holder.currentUser.remove();
         }
       };
     });
@@ -100,18 +100,18 @@ class ThreadPoolConfig {
   }
   // endregion
 
-  // region HTTP filter extracting username from request header
+  // region HTTP filter extracting username from request header TODO
   @Bean
   public HttpFilter tenantFilter() {
     return new HttpFilter() {
       @Override
       protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         String tenantId = request.getHeader("x-user");
-        Holder.currentUser.set(tenantId);
+//        Holder.currentUser.set(tenantId);
         try {
           super.doFilter(request, response, chain);
         } finally {
-          Holder.currentUser.remove();
+//          Holder.currentUser.remove();
         }
         // TODO similar for message listeners, SOAP endpoints, ..., and schedulers
       }
