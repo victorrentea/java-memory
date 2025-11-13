@@ -25,17 +25,16 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 @RequiredArgsConstructor
 public class Leak23_NumberParse {
   @GetMapping
-  public void parse(@RequestParam Map<String, Object> json) throws InterruptedException, ExecutionException {
+  public void parse(@RequestParam Map<String, String> json) throws InterruptedException, ExecutionException {
     log.info("Got: {}", json);
-    SmartParser.autoParse(json); //@oleg
-//    log.info("Got: {}", json);
+    autoParse(json); //@oleg
+    log.info("First value.size={}", json.values().iterator().next().length());
   }
-}
-class SmartParser {
+
   private static final Pattern SCIENCE_NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+[eE][-+]?\\d+");
-  public static void autoParse(Map<String, Object> json) {
+  private static void autoParse(Map<String, String> json) {
     for (String key : json.keySet()) {
-      String valueString = json.get(key).toString();
+      String valueString = json.get(key);
       if (SCIENCE_NUMBER.matcher(valueString).matches()) {
         json.put(key, new BigDecimal(valueString).toPlainString());
       }
