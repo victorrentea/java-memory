@@ -28,6 +28,7 @@ public class Leak23_NumberParse {
   public void parse(@RequestParam Map<String, Object> json) throws InterruptedException, ExecutionException {
     log.info("Got: {}", json);
     SmartParser.autoParse(json); //@oleg
+//    log.info("Got: {}", json);
   }
 }
 class SmartParser {
@@ -36,7 +37,7 @@ class SmartParser {
     for (String key : json.keySet()) {
       String valueString = json.get(key).toString();
       if (SCIENCE_NUMBER.matcher(valueString).matches()) {
-        json.put(key, new BigDecimal(valueString));
+        json.put(key, new BigDecimal(valueString).toPlainString());
       }
     }
   }
