@@ -21,14 +21,15 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 
 @Slf4j
 @RestController
-@RequestMapping("leak23")
+@RequestMapping("leak23") // Thanks @oleg
 @RequiredArgsConstructor
 public class Leak23_NumberParse {
-  @GetMapping
+  @GetMapping // http://localhost:8080/leak23?uuid=51635621364e981261465&number=1E10
   public void parse(@RequestParam Map<String, String> json) throws InterruptedException, ExecutionException {
     log.info("Got: {}", json);
-    autoParse(json); //@oleg
+    autoParse(json);
     log.info("First value.size={}", json.values().iterator().next().length());
+    log.info("JSON: " + json);
   }
 
   private static final Pattern SCIENCE_NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+[eE][-+]?\\d+");

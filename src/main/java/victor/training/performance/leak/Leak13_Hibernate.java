@@ -96,7 +96,7 @@ class BigEntity {
 }
 
 interface BigEntityRepo extends JpaRepository<BigEntity, Long> {
-  @Query("FROM BigEntity")
+  @Query("FROM BigEntity") // ~ while(resultSet.next()) {
   Stream<BigEntity> streamAll();
 }
 
