@@ -28,11 +28,13 @@ public class Leak18_ConnectionLeakManual {
     log.info("Start work on ✈️{}->{}",
         flight.origin.toUpperCase(),
         flight.destination.toUpperCase());
-    // the real work
-    connection.close();
+    try {
+      // the real work
+    } finally {
+      connection.close();
+    }
     return done();
   }
-
 
 
   // === REDIS ===
