@@ -14,7 +14,6 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 @RestController
 @RequestMapping("leak17")
 public class Leak17_ThreadStarvation {
-  // happens if REST calls are handled with (bounded:200) Platform Threads (not Virtual)
   private final Semaphore semaphore = new Semaphore(2);
 
   @GetMapping // call it 500 times to saturate Tomcat's thread pool: 200 in action + 300 in queue
@@ -27,10 +26,11 @@ public class Leak17_ThreadStarvation {
   @GetMapping("/liveness")
   public String liveness() {
     return "k8s, 🙏 please don't kill me! Responded at " + LocalDateTime.now();
+    // Handling each incoming HTTP request on a new Virtual Threads would fix this problem
   }
 
   private String slow() {
-    sleepMillis(20_000); // pretend tensorFlow/CPU or criminal SQL
+    sleepMillis(20_000); // pretend CPU/GPU/SQL/API call
     return "result";
   }
 }

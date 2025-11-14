@@ -26,7 +26,7 @@ public class MemoryApp {
 
   @EventListener
   public void onStart(ApplicationReadyEvent event) {
-    log.info("🌟🌟🌟 MemoryApp at http://localhost:8080 pid {} javac {} 🌟🌟🌟",
+    log.info("🌟🌟🌟 Started at http://localhost:8080 pid {} javac {} 🌟🌟🌟",
         ProcessHandle.current().pid(),
         getJavacVersion(MemoryApp.class));
     runAsync(System::gc, delayedExecutor(2, SECONDS));

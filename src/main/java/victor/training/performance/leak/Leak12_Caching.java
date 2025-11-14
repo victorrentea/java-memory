@@ -44,7 +44,7 @@ class CacheService {
 
   // === ❌ Anti-Pattern: Manual Cache ===
   Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
-  // My wheel is the best wheel 🛞
+  // "Not invented here syndrome" 🛞
   public Big20MB getTodayFex(LocalDate date) {
     return fexCache.computeIfAbsent(date, d -> {
       log.debug("Fetch data for date: {}", date);

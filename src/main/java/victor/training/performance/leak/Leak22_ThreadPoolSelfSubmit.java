@@ -24,11 +24,13 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 @RequiredArgsConstructor
 public class Leak22_ThreadPoolSelfSubmit {
   private final Confused confused;
+
   @GetMapping
   public String deadlock() throws InterruptedException, ExecutionException {
-    return confused.asyncDeadlock().get(); // imagine 3 x
+    return confused.asyncDeadlock().get(); // called 3x in parallel
   }
 }
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,17 +38,18 @@ class Confused {
   private final ThreadPoolTaskExecutor executor3; // has 3 threads
 
   @Async("executor3")
-  public CompletableFuture<String> asyncDeadlock() throws ExecutionException, InterruptedException {
-    sleepMillis(100); // calls can overlap
-    CompletableFuture<String> f1 = supplyAsync(()-> apiCall(), executor3);
-    CompletableFuture<String> f2 = supplyAsync(()-> apiCall(), executor3);
-    return CompletableFuture.completedFuture(f1.get() + f2.get());
+  public CompletableFuture<String> asyncDeadlock() {
+    sleepMillis(50);
+    CompletableFuture<String> f1 = supplyAsync(() -> apiCall(), executor3);
+    String s2 = apiCall();
+    return f1.thenApply(s1 -> s1 + s2);
   }
 
   public static String apiCall() {
     return "remote data";
   }
 }
+
 @Configuration
 @EnableAsync
 class Config {
