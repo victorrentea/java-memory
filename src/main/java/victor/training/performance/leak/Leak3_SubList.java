@@ -39,7 +39,9 @@ public class Leak3_SubList {
     // Requirement: keep track of the last 10 accesses
     lastTen.add(access);
     if (lastTen.size() > 10) {
-      lastTen = lastTen.subList(1, lastTen.size()); // remove first
+      // RTF*****M
+      lastTen = lastTen.subList(1, lastTen.size()); // remove first // returns a VIEW over the old list
+//      lastTen.remove(0); //done
     }
     return "lastTen.size = " + lastTen.size() + done();
   }

@@ -6,9 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.Data;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -42,14 +40,15 @@ class CacheService {
     return new Big20MB();
   }
 
-  // === ❌ Anti-Pattern: Manual Cache ===
+  // === ❌ Anti-Pattern: Manual Cache DIY ===
   Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
   // "Not invented here syndrome" 🛞
+  @Cacheable("fex")
   public Big20MB getTodayFex(LocalDate date) {
-    return fexCache.computeIfAbsent(date, d -> {
-      log.debug("Fetch data for date: {}", date);
+//    return fexCache.computeIfAbsent(date, d -> {
+//      log.debug("Fetch data for date: {}", date);
       return fetchData();
-    });
+//    });
   }
 
   @Bean
@@ -58,27 +57,21 @@ class CacheService {
   }
 
   // === ❌ Cache Key Mess-up #1 ===
-  @Cacheable("signature") // a proxy returns the previous value for the same parameter(s)
+  @Cacheable(value = "signature",key = "#id") // a proxy returns the previous value for the same parameter(s)
   // last commit: added request time 💪 - @vibe_coder😎
   public Big20MB fetchById(Long id, long requestTime) {
     log.debug("Fetch contract id={} at {}", id, requestTime);
     return fetchData();
   }
 
-  // === ❌ Cache Key Mess-up #2 ===
-  @RequiredArgsConstructor
-  @Getter
-  @Setter
-  static class InquiryParams {
-    private final UUID contractId;
-    private final int year;
-    private final int month;
-  }
 
+  // === ❌ Cache Key Mess-up #2 ===
+  record InquiryParams(UUID contractId, int year, int month) {
+  }
   @Cacheable("invoices")
   // last commit: extracted params in a new class 💪 - @vibe_coder😎
   public Big20MB inquiryKey(InquiryParams params) {
-    log.debug("Fetch invoice for {} {} {}", params.getContractId(), params.getYear(), params.getMonth());
+    log.debug("Fetch invoice for {} {} {}", params.contractId, params.year,params.month);
     return fetchData();
   }
 
@@ -87,10 +80,10 @@ class CacheService {
 
   public Big20MB inquiryKey1(Inquiry inquiry) {
     return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
-        .get(inquiry, () -> {
+        .get(inquiry, () -> { // hashCode(inquiry{id:null}) > not found
           inquiryRepo.save(inquiry); // last commit: they prompted me to save it - @vibe_coder😎
           return fetchData();
-        });
+        }); // cache.put(inquriy{id:!null})
   }
 
   // === ❌ Cache Key Mess-up #4 ===

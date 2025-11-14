@@ -14,13 +14,13 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 @RestController
 @RequestMapping("leak17")
 public class Leak17_ThreadStarvation {
-  private final Semaphore semaphore = new Semaphore(2);
+  private final Semaphore semaphore = new Semaphore(200-1); // 1 for liveness
 
   @GetMapping // call it 500 times to saturate Tomcat's thread pool: 200 in action + 300 in queue
-  public String hotEndpoint() throws InterruptedException {
+  public /*Flux<*/String hotEndpoint() throws InterruptedException {
     // FIXME semaphore.acquire()/.release()
 
-    return slow();
+    return slow(); // tensorflow/LLMish/AIish runs on GPU for 20s
   }
 
   @GetMapping("/liveness")

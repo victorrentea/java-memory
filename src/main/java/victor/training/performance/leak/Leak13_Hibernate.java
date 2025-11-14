@@ -35,13 +35,18 @@ public class Leak13_Hibernate {
   private final EntityManager entityManager;
 
   @GetMapping("leak13/export")
-  @Transactional
+  @Transactional(readOnly = true)
   public String export() throws IOException {
+    BigEntity e1 = repo.findById(1L).orElseThrow();// 1 SELECT
+    BigEntity e2 = repo.findById(1L).orElseThrow(); // 0 SELECT
+    System.out.println(e1 == e2); // 1st level cache of Hibernate
+
     File file = new File("big-entity-export.txt");
     log.debug("Exporting from DB to {}...", file.getAbsolutePath());
     try (PrintWriter writer = new PrintWriter(file)) {
       repo.streamAll() // iterates rows w/o loading all ≈ while(resultSet.next()) {👴🏻
-          .map(BigEntity::getDescription)
+          .peek(e->entityManager.detach(e)) // remove it from 1st level cache
+          .map(bigEntity -> bigEntity.getDescription())
           .forEach(writer::write);
     }
 

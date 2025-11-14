@@ -16,7 +16,8 @@ import static victor.training.performance.util.PerformanceUtil.done;
 public class Leak10_ShutdownHook {
   @GetMapping("leak10")
   public String add() throws Exception {
-    String result = OldLib.doWork();
+    String result = OldLib.doWork(); // never meant to be used server-side, not maintained
+    clearHooksUsingReflection();
     return "♾️ Leak doing " + result + done();
   }
 
@@ -26,7 +27,7 @@ public class Leak10_ShutdownHook {
     Field hooksField = clazz.getDeclaredField("hooks");
 
     // Requires VM args: --add-opens java.base/java.lang=ALL-UNNAMED
-    hooksField.setAccessible(true);
+    hooksField.setAccessible(true); // good bye 'private'!
 
     IdentityHashMap<Thread, Thread> hooks = (IdentityHashMap<Thread, Thread>) hooksField.get(null);
     if (hooks == null) {
