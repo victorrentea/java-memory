@@ -38,7 +38,7 @@ public class ThreadLocalDemo {
 
   public static void simulateRequest(String user, String data, MyController controller) {
     log.info("Current user: {}", user); // from header/session/JWT...
-    controller.create(data);
+    controller.create(data,user);
   }
 }
 
@@ -52,8 +52,8 @@ class MyController {
   private final MyService service;
 
   @GetMapping("thread-locals")
-  public void create(@RequestParam String data) {
-    service.create(data);
+  public void create(@RequestParam String data, String currentUser) {
+    service.create(data, currentUser);
   }
 }
 
@@ -62,17 +62,16 @@ class MyController {
 class MyService {
   private final MyRepo repo;
 
-  public void create(String data) {
+  public void create(String data, String currentUser) {
     sleepMillis(10); // to race
-    repo.save(data);
+    repo.save(data, currentUser);
   }
 }
 
 @Repository
 @Slf4j
 class MyRepo {
-  public void save(String data) {
-    String currentUser = "TODO";
+  public void save(String data, String currentUser) {
     log.info("INSERT INTO A (data={}, last_modified_by={}) ", data, currentUser);
   }
 }
