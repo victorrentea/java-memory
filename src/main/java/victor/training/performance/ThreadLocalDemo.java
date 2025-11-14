@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
@@ -46,6 +47,13 @@ public class ThreadLocalDemo {
 
 class Holder {
   public static ThreadLocal<String> currentUser = new ThreadLocal<>() ;
+  // Used in BE for:
+  // - traceparent
+  // - SecurityContextHolder.getContext()
+  // - @Transactional
+  // - Logback MDC
+  // - Opentelemetry baggage
+  // in WebFlux, the equivalent is ReactorContext
 }
 
 @RestController
@@ -55,6 +63,7 @@ class MyController {
 
   @GetMapping("thread-locals")
   public void create(@RequestParam String data) {
+//    MDC.put("traceId","....");
     service.create(data);
   }
 }

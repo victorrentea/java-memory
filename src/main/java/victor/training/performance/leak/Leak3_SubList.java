@@ -28,6 +28,15 @@ public class Leak3_SubList {
   public synchronized String endpoint(HttpServletRequest request) {
     Access access = new Access(request.getRemoteAddr() + ":" + request.getRemotePort(), LocalDateTime.now(), new Big(KB(1)));
 
+
+    String s= "a";
+    String s2= "a";
+    String s3= "a";
+//    var ss= access.ip.intern();// forcefully inject this string into SCP
+
+
+
+    // Requirement: keep track of the last 10 accesses
     lastTen.add(access);
     if (lastTen.size() > 10) {
       lastTen = lastTen.subList(1, lastTen.size()); // remove first

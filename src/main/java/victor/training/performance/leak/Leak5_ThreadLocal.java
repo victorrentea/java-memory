@@ -1,5 +1,6 @@
 package victor.training.performance.leak;
 
+import org.slf4j.MDC;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import victor.training.performance.leak.obj.Big20MB;
@@ -18,13 +19,20 @@ public class Leak5_ThreadLocal {
   public String controller() {
     String currentUsername = "john.doe"; // from request header/JWT/http session
     threadLocal.set(new RequestContext(currentUsername, new Big20MB()));
+    try { // RULE: immediately after .set do try {..}finally{.remove}
+      //BETTER: AVOID USING YOUR OWN THREAD LOCALS
+      // a) prefer to attach to SecurityHolderHolder principal
+      // b) open telemetry baggage / MDC.put/clear for debugging info
 
-    service();
-
+      service();
+    } finally {
+      threadLocal.remove();
+    }
     return "Magic can hurt " + done() + "<p>" + getUsedHeapHuman();
   }
 
   private void service() {
+    if (true) throw new RuntimeException("BUG🐞");
     repo();
   }
 

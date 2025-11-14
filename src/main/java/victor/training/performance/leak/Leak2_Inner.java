@@ -49,7 +49,7 @@ public class Leak2_Inner {
 class CalculatorFactory {
   private final Big20MB bigMac = new Big20MB(); // 🍔
 
-  public class Calculator {// TODO what connection to bigMac🍔?
+  public static class Calculator {// TODO what connection to bigMac🍔?
     public String calculate() {
       return "Answer: " + 42;
     }
@@ -62,22 +62,28 @@ class CalculatorFactory {
   //<editor-fold desc="Lambdas vs Anonymous implementation">
   public Stream<String> anonymousVsLambdas(List<String> input) {
     return input.stream()
-        .filter(new Predicate<String>() {
-          @Override
-          public boolean test(String s) {
-            return !s.isBlank();
-          }
-        });
+        .filter(s -> !s.isBlank()); // safe!
+
+//        .filter(new Predicate<String>() { // anonymous interf imple ~ inner class (NON STATIC)
+//          @Override
+//          public boolean test(String s) {
+//            return !s.isBlank();
+//          }
+//        });
     // TODO how about ->, ::
   }
   //</editor-fold>
 
   //<editor-fold desc="Map init in Java <= 8">
   public Map<String, Integer> mapInit() {
-    return new HashMap<>() {{
+    // one-liner nerdy map init
+    return new HashMap<>() { // defines and instantiates an anonymous subclass
+      { // instance init block
       put("one", 1);
       put("two", 2);
-    }};
+    }
+    };
+    // return Map.of("one", 1, "two", 2); // better in Java 9+
   }
   //</editor-fold>
 }

@@ -101,10 +101,10 @@ class Leak6Config {
     executor.initialize();
     // lift ThreadLocal data from the submitter thread:
     executor.setTaskDecorator(task -> {
-      var submitterMDC = MDC.getCopyOfContextMap();
+      var submitterMDC = MDC.getCopyOfContextMap(); // get from submitter thread
       return () -> {
         try {
-          MDC.setContextMap(submitterMDC);
+          MDC.setContextMap(submitterMDC); // restore on worker thread
           task.run();
         } finally {
           MDC.clear();
