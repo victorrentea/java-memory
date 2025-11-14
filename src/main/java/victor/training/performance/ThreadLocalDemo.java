@@ -32,7 +32,8 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 public class ThreadLocalDemo {
   public static void main(String[] args) {
     MyController controller = new MyController(new MyService(new MyRepo()));
-    simulateRequest("alice", "alice's data", controller);
+    CompletableFuture.runAsync(() -> simulateRequest("alice", "alice's data", controller));
+    CompletableFuture.runAsync(() -> simulateRequest("bob", "bob's data", controller));
     sleepMillis(100);
   }
 
