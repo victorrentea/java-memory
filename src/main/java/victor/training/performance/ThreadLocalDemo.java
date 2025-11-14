@@ -39,13 +39,13 @@ public class ThreadLocalDemo {
 
   public static void simulateRequest(String user, String data, MyController controller) {
     log.info("Current user: {}", user); // from header/session/JWT...
-    Holder.currentUser=user;
+    Holder.currentUser.set(user);
     controller.create(data);
   }
 }
 
 class Holder {
-  public static String currentUser;
+  public static ThreadLocal<String> currentUser = new ThreadLocal<>() ;
 }
 
 @RestController
@@ -74,7 +74,7 @@ class MyService {
 @Slf4j
 class MyRepo {
   public void save(String data) {
-    String user = Holder.currentUser;
+    String user = Holder.currentUser.get();
     log.info("INSERT INTO A (data={}, last_modified_by={}) ", data, user);
   }
 }
