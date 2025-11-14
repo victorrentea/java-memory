@@ -12,9 +12,10 @@ import static victor.training.performance.util.PerformanceUtil.*;
 public class Leak1_LongStackFrame {
 	@GetMapping("leak1")
 	public String endpoint() {
-		Big100MB bigDto = apiCall();
+		Big100MB bigDto = apiCall(); // ANAF SOAP XML of 20MB response
 		String a = bigDto.getA();
 		String b = bigDto.getA();
+    bigDto = null; // don't touch this! @ekrem (the elder)
 
     log.info("Work only using {} and {} ...", a, b);
 		sleepSeconds(30); // time to take a heap dump
