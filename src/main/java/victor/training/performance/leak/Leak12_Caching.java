@@ -5,10 +5,7 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -43,8 +40,9 @@ class CacheService {
   }
 
   // === ❌ Anti-Pattern: Manual Cache ===
+  /*± static*/
   Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
-  // "Not invented here syndrome" 🛞
+  // "Not invented here syndrome" ≈ DIY mania
   public Big20MB getTodayFex(LocalDate date) {
     return fexCache.computeIfAbsent(date, d -> {
       log.debug("Fetch data for date: {}", date);
@@ -54,12 +52,13 @@ class CacheService {
 
   @Bean
   MeterBinder fexCacheMetrics() {// 🔔ALARM on this
+    // most caches must have: max-size + entry-ttl
     return registry -> Gauge.builder("fex_cache_size", fexCache, Map::size).register(registry);
   }
 
   // === ❌ Cache Key Mess-up #1 ===
   @Cacheable("signature") // a proxy returns the previous value for the same parameter(s)
-  // last commit: added request time 💪 - @vibe_coder😎
+  // last edit: added request time param -- by @vibe_coder😎
   public Big20MB fetchById(Long id, long requestTime) {
     log.debug("Fetch contract id={} at {}", id, requestTime);
     return fetchData();
@@ -70,13 +69,13 @@ class CacheService {
   @Getter
   @Setter
   static class InquiryParams {
-    private final UUID contractId;
+    private final long contractId;
     private final int year;
     private final int month;
   }
 
   @Cacheable("invoices")
-  // last commit: extracted params in a new class 💪 - @vibe_coder😎
+  // last edit: extracted params in a new class -- by @vibe_coder😎
   public Big20MB inquiryKey(InquiryParams params) {
     log.debug("Fetch invoice for {} {} {}", params.getContractId(), params.getYear(), params.getMonth());
     return fetchData();
@@ -85,6 +84,7 @@ class CacheService {
   // === ❌ Cache Key Mess-up #3 ===
   private final CacheManager cacheManager;
 
+  // a hard one:
   public Big20MB inquiryKey1(Inquiry inquiry) {
     return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
         .get(inquiry, () -> {
@@ -103,7 +103,7 @@ class CacheService {
 }
 
 @Data
-@Entity
+@Entity // generates hash/equals (dangerous if mutable)
 class Inquiry {
   @GeneratedValue
   @Id
@@ -148,8 +148,9 @@ public class Leak12_Caching {
 
   @GetMapping("objectKey")
   public String objectKey() {
-    UUID contractId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    Big20MB data = cacheService.inquiryKey(new InquiryParams(contractId, 2023, 10));
+    Long contractId = 42L;
+    InquiryParams params = new InquiryParams(contractId, 2023, 10);
+    Big20MB data = cacheService.inquiryKey(params);
     return data + "<br>" + getUsedHeapHuman();
   }
 
