@@ -16,18 +16,18 @@ public class Leak24_MetricTags {
   private final MeterRegistry meterRegistry;
   private final RestTemplate restTemplate;
 
-  @GetMapping("leak24/{id}")
-  public String endpoint(@PathVariable String id) {
-    apiCall(id);
-//    meterRegistry.timer("sas", "uri", id).record(() -> {apiCall(id);}); // ❌ DIY leaks
+  @GetMapping("leak24/{notificationId}")
+  public String endpoint(@PathVariable String notificationId) {
+    // on Spring Boot < 3, external calls metrics are tagged with their URI, here=unbound => OOME❌
+    String uri = "http://example.com/notification/" + notificationId;
+    restTemplate.getForEntity(uri, String.class);
+
+    // Custom tag has high cardinality => potential OOME❌
+    // meterRegistry.timer("sas", "notificationId", notificationId)
+    meterRegistry.timer("sas")
+      .record(() -> "simulated work");
     return "Try other ids and check the metrics http_client_requests_seconds_* at http://localhost:8080/actuator/prometheus";
   }
-
-  private void apiCall(String id) {
-    String uri = "http://example.com/product" + id;
-    // ✅ tag uri=NONE on SBP ≥ 3.0.x
-    restTemplate.getForEntity(uri, String.class);
-  }
 }
-// thanks to: Vladyslav D.
-// https://stackoverflow.com/questions/74962369/uri-tag-of-http-client-requests-metric-as-none-in-spring-boot-3-0-x
+// thanks to: Vladyslav D., after my Devoxx BE 2025
+// see https://stackoverflow.com/questions/74962369/uri-tag-of-http-client-requests-metric-as-none-in-spring-boot-3-0-x
