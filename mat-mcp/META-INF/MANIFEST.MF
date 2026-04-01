@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MAT SWTBot Automation
+Bundle-SymbolicName: com.victorrentea.mat.automate
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: org.eclipse.swtbot.swt.finder,
+ org.eclipse.swtbot.eclipse.finder,
+ org.eclipse.swtbot.junit4_x,
+ org.eclipse.ui,
+ org.eclipse.ui.ide,
+ org.eclipse.core.runtime,
+ org.eclipse.core.filesystem,
+ org.eclipse.mat.api,
+ org.eclipse.mat.parser,
+ org.eclipse.mat.report,
+ org.junit;bundle-version="4.13"
+Eclipse-RegisterBuddy: org.eclipse.mat.api
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-Vendor: victorrentea

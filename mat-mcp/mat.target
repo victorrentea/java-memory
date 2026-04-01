@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+<target name="MAT 1.15 Target">
+    <locations>
+        <!-- MAT installation directory -->
+        <location path="/Applications/MemoryAnalyzer.app/Contents/Eclipse" type="Directory"/>
+
+        <!-- SWTBot from Eclipse 2023-12 update site -->
+        <location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+            <repository location="https://download.eclipse.org/technology/swtbot/releases/4.1.0/"/>
+            <unit id="org.eclipse.swtbot.eclipse.feature.group" version="0.0.0"/>
+            <unit id="org.eclipse.swtbot.feature.group" version="0.0.0"/>
+            <unit id="org.eclipse.swtbot.junit4_x" version="0.0.0"/>
+        </location>
+
+        <!-- Eclipse platform (for any missing dependencies SWTBot needs) -->
+        <location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+            <repository location="https://download.eclipse.org/releases/2023-12/"/>
+            <unit id="org.eclipse.equinox.executable.feature.group" version="0.0.0"/>
+            <unit id="org.eclipse.ui.ide.application" version="0.0.0"/>
+            <unit id="org.eclipse.ui.ide" version="0.0.0"/>
+            <unit id="org.eclipse.swt.cocoa.macosx.aarch64" version="0.0.0"/>
+        </location>
+    </locations>
+</target>

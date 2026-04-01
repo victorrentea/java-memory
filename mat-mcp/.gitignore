@@ -1,0 +1,8 @@
+target/
+test-data/
+screenshots/
+*.class
+.settings/
+.project
+.classpath
+.mcp.json
