@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-@SuppressWarnings("resource")
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -16,18 +15,21 @@ public class Leak24_MetricTags {
   private final MeterRegistry meterRegistry;
   private final RestTemplate restTemplate;
 
-  @GetMapping("leak24/{notificationId}")
-  public String endpoint(@PathVariable String notificationId) {
-    // on Spring Boot < 3, external calls metrics are tagged with their URI, here=unbound => OOME❌
-    String uri = "http://example.com/notification/" + notificationId;
-    restTemplate.getForEntity(uri, String.class);
+  @GetMapping("leak24/{notificationUUID}")
+  public String endpoint(@PathVariable String notificationUUID) {
+    String url = "https://example.com/notification/" + notificationUUID;
 
-    // Custom tag has high cardinality => potential OOME❌
-    // meterRegistry.timer("sas", "notificationId", notificationId)
-    meterRegistry.timer("sas")
-      .record(() -> "simulated work");
+    meterRegistry.timer("sas", "notificationId", notificationUUID)
+        .record(() -> restTemplate.getForEntity(url, String.class));
+
     return "Try other ids and check the metrics http_client_requests_seconds_* at http://localhost:8080/actuator/prometheus";
   }
 }
-// thanks to: Vladyslav D., after my Devoxx BE 2025
-// see https://stackoverflow.com/questions/74962369/uri-tag-of-http-client-requests-metric-as-none-in-spring-boot-3-0-x
+/**
+ * KEY-POINTS
+ * ⭐️ High-cardinality tags = unbounded metrics expansion
+ * ⭐️ Outbound REST calls were auto-tagged with their URL in Spring Boot 2 😱
+ * Details: https://stackoverflow.com/questions/74962369/uri-tag-of-http-client-requests-metric-as-none-in-spring-boot-3-0-x
+ * 🙏 Thanks to Vladyslav D at Devoxx BE 2025
+ *
+ */

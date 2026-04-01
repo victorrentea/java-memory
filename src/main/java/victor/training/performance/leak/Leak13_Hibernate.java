@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
@@ -36,19 +37,18 @@ public class Leak13_Hibernate {
 
   @GetMapping("leak13/export")
   @Transactional
-  public String export() throws IOException {
+  public String export() throws FileNotFoundException {
     File file = new File("big-entity-export.txt");
-    log.debug("Exporting from DB to {}...", file.getAbsolutePath());
+    log.debug("Exporting to file: {}", file.getAbsolutePath());
     try (PrintWriter writer = new PrintWriter(file)) {
-      repo.streamAll() // iterates rows w/o loading all ≈ while(resultSet.next()) {👴🏻
+      repo.streamAll() // iterates rows w/o loading all in-mem ≈ while(resultSet.next()) {
           .map(BigEntity::getDescription)
           .forEach(writer::write);
     }
 
     log.debug("Export completed");
-//    sleepMillis(60 * 1000); // take a heap dump
-    return "Exported " + humanSize(file.length()) + " in " + file.getAbsolutePath()
-           + "<br>" + done();
+//    sleepMillis(60 * 1000); // to take a heap dump
+    return "Exported " + humanSize(file.length()) + " to " + file.getAbsolutePath() + "<br>" + done();
   }
 }
 

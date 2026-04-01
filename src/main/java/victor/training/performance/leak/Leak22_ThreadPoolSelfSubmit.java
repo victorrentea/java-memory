@@ -27,7 +27,7 @@ public class Leak22_ThreadPoolSelfSubmit {
 
   @GetMapping
   public String deadlock() throws InterruptedException, ExecutionException {
-    return confused.asyncDeadlock().get(); // called 3x in parallel
+    return confused.asyncDeadlock().get(); // call it 3x in parallel
   }
 }
 
@@ -38,15 +38,20 @@ class Confused {
   private final ThreadPoolTaskExecutor executor3; // has 3 threads
 
   @Async("executor3")
-  public CompletableFuture<String> asyncDeadlock() {
+  public CompletableFuture<String> asyncDeadlock() { // enter this with 3 parallel API calls
+    // 🤔 I have to do two API calls - let me do them in parallel
     sleepMillis(50);
-    CompletableFuture<String> f1 = supplyAsync(() -> apiCall(), executor3);
-    String s2 = apiCall();
-    return f1.thenApply(s1 -> s1 + s2);
+    CompletableFuture<String> result1Promise = supplyAsync(() -> apiCall1(), executor3);
+    String result2 = apiCall2();
+    return result1Promise.thenApply(s1 -> s1 + result2);
   }
 
-  public static String apiCall() {
-    return "remote data";
+  public static String apiCall1() {
+    return "r1";
+  }
+
+  public static String apiCall2() {
+    return "r2";
   }
 }
 

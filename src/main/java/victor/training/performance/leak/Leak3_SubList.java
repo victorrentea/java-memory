@@ -38,7 +38,7 @@ public class Leak3_SubList {
   //  - leak appears under load🔥
   //  - analyze retained heap using
   //    - VisualVM - too slow 🚫
-  //    - Eclipse MemoryAnalyzer 👴
+  //    - Eclipse MemoryAnalyzer
   //    - IntelliJ > 'Dominator Tree' tab 🫤
   //    - jProfiler 💰
 }

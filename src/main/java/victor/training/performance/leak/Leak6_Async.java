@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,21 +39,29 @@ public class Leak6_Async {
   public String download() {
     int taskId = counter.incrementAndGet();
     MDC.put("traceId", "" + taskId);
-    String data = fetchData(MB(10)); // Exaggeration? = same as smaller hit at higher RPS
+    String data = fetchData(MB(10)); // or smaller files at a higher rate
     log.info("Got {} bytes", data.length());
     CompletableFuture.runAsync(() -> processor.process(data, taskId));
-    // Bad .commonPool(): unbounded queue, no lifting of ThreadLocal, competition vs other CF + parallelStream
-    // Bad CompletableFuture: exceptions easily lost
-    // Bad: keep large blobs in memory
     return """
         Long task submitted: #%d<br>
-        Data in memory: %,d bytes<br>
+        Data now in memory: %,d bytes<br>
         Reload 20x, then look in <a href='http://localhost:8080/actuator/prometheus' target='_blank'>metrics</a> for 'fjp'<br>
         Keep reloading page for OOME :)<p>
         %s"""
         .formatted(taskId, data.length(), getUsedHeapHuman());
   }
 }
+
+/**
+ * ⭐️ KEY POINTS
+ * - Bad: .commonPool(): ☢️unbounded queue, 🙁no propagation of ThreadLocal data, JVM-wide competition (+parallelStream)
+ * - Bad: CompletableFuture: exceptions can get lost
+ * - Bad: retain large blobs of memory for long
+ * 👍 Offload large objects from memory to disk/S3🪣
+ * 👍 Use bounded queues (+ for thread pools)
+ * 👍 ForkJoinPool.commonPool() CAN be monitored (see below how)
+ * 👍 Pass a Spring executor to any CompletableFuture.*Async(,👉executor)
+ */
 
 @Slf4j
 @Service
@@ -64,17 +73,6 @@ class FileProcessor {
     log.debug("Task {} completed: counted {} lines", taskId, newLinesCount);
   }
 }
-
-
-/**
- * ⭐️ KEY POINTS
- * 👍 Offload large objects from memory to (eg) disk/S3🪣
- * 👍 Use bounded queues (eg for thread pools)
- * ☣️ CompletableFuture.xyzAsync(->) run on FJP.commonPool(), which has an unbounded queue
- * 👍 ForkJoinPool.commonPool() can be monitored (see below how)
- * 👍 Pass a Spring executor to any CompletableFuture.*Async(,👉executor)
- */
-
 
 // === === === === === === === Support code  === === === === === === ===
 
@@ -114,7 +112,6 @@ class Leak6Config {
     return executor;
   }
 }
-
 
 
 @Slf4j

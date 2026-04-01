@@ -12,15 +12,16 @@ import java.util.Set;
 
 import static victor.training.performance.util.PerformanceUtil.done;
 
+@SuppressWarnings("ALL")
 @RestController
 public class Leak10_ShutdownHook {
   @GetMapping("leak10")
   public String add() throws Exception {
-    String result = OldLib.doWork();
+    String result = OldLib.use();
     return "♾️ Leak doing " + result + done();
   }
 
-  //region Solution (you won't like it)
+  //region Solution (you won't like it 🤢)
   public static void clearHooksUsingReflection() throws Exception {
     Class<?> clazz = Class.forName("java.lang.ApplicationShutdownHooks");
     Field hooksField = clazz.getDeclaredField("hooks");
@@ -43,7 +44,7 @@ public class Leak10_ShutdownHook {
 // 🔽 in a .jar you cannot change
 class OldLib {
   // lib was designed in the early 2000s to be used in a desktop/console/job app
-  public static String doWork() {
+  public static String use() {
     Big20MB someUsedData = new Big20MB();
     Runtime.getRuntime().addShutdownHook(new Thread(() ->
         System.out.println("Cleanup: " + someUsedData)));

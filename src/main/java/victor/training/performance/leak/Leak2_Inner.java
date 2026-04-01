@@ -49,7 +49,7 @@ public class Leak2_Inner {
 class CalculatorFactory {
   private final Big20MB bigMac = new Big20MB(); // 🍔
 
-  public class Calculator {// TODO what connection to bigMac🍔?
+  public class Calculator {// TODO what's the connection with bigMac
     public String calculate() {
       return "Answer: " + 42;
     }

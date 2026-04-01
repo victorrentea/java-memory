@@ -12,13 +12,14 @@ import static victor.training.performance.util.PerformanceUtil.*;
 public class Leak5Lib_ThreadLocalCache {
   @GetMapping("leak5/lib")
   public String endpoint() throws NoSuchFieldException, IllegalAccessException {
+    // ⚠️ Library expects to run on a worker thread from a thread pool ♻️
     String work = Library.method();
-    // no further use of lib on this flow
-    sleepMillis(300); // my application logic
-    return "Manifests under high RPS on Virtual Threads<br>Now on thread: " + Thread.currentThread() + done();
+    // no later use of lib on this flow
+    sleepMillis(300); // pretend: my application logic
+    return "Manifests under high RPS on Virtual Threads: " + Thread.currentThread() + done();
   }
 
-  //region Solution (you won't like it)
+  //region Solution (you won't like it 🤢)
   private void clearLibraryThreadLocalsViaReflection() throws NoSuchFieldException, IllegalAccessException {
     // TODO first: try to upgrade the lib
     var field = Library.class.getDeclaredField("threadLocal");
@@ -35,7 +36,7 @@ public class Leak5Lib_ThreadLocalCache {
  * ☢️ ThreadLocal data can make Virtual Threads heavy again
  */
 
-// --- Library code I cannot change 🔽 ---
+// --- Library code you cannot change 🔽 ---
 class Library {
   private static final Logger log = LoggerFactory.getLogger(Library.class);
 

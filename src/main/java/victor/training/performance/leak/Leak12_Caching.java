@@ -31,6 +31,7 @@ import static java.util.stream.IntStream.range;
 import static victor.training.performance.util.PerformanceUtil.done;
 import static victor.training.performance.util.PerformanceUtil.getUsedHeapHuman;
 
+@SuppressWarnings("DataFlowIssue")
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -39,28 +40,27 @@ class CacheService {
     return new Big20MB();
   }
 
-  // === ❌ Anti-Pattern: Manual Cache ===
-  /*± static*/
-  Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
-  // "Not invented here syndrome" ≈ DIY mania
-  public Big20MB getTodayFex(LocalDate date) {
+  // === ☢️ RISK: DIY Cache (NIH Syndrome?) ===
+  // static
+  private final Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
+  public Big20MB getForeignExchangeRates(LocalDate date) {
     return fexCache.computeIfAbsent(date, d -> {
-      log.debug("Fetch data for date: {}", date);
+      log.debug("Fetch FEX for date: {}", date);
       return fetchData();
     });
   }
 
   @Bean
-  MeterBinder fexCacheMetrics() {// 🔔ALARM on this
-    // most caches must have: max-size + entry-ttl
+  MeterBinder fexCacheMetrics() {// ⇒ set ALARMS 🔔 on these in production
+    // TODO AI: any better way?
     return registry -> Gauge.builder("fex_cache_size", fexCache, Map::size).register(registry);
+    // + entry ttl + hit ratio + ...
   }
 
   // === ❌ Cache Key Mess-up #1 ===
-  @Cacheable("signature") // a proxy returns the previous value for the same parameter(s)
-  // last edit: added request time param -- by @vibe_coder😎
-  public Big20MB fetchById(Long id, long requestTime) {
-    log.debug("Fetch contract id={} at {}", id, requestTime);
+  @Cacheable("signature") // AOP proxy returns the previous value for the same parameter(s)
+  public Big20MB fetchById(Long id, long requestTime) { // blame: added request time param -- 😎vibe-coded with Haiku
+    log.debug("Fetch contract id:{} at:{}", id, requestTime);
     return fetchData();
   }
 
@@ -75,20 +75,18 @@ class CacheService {
   }
 
   @Cacheable("invoices")
-  // last edit: extracted params in a new class -- by @vibe_coder😎
-  public Big20MB inquiryKey(InquiryParams params) {
+  public Big20MB inquiryKey(InquiryParams params) { // blame: extracted params in a new class 😎
     log.debug("Fetch invoice for {} {} {}", params.getContractId(), params.getYear(), params.getMonth());
     return fetchData();
   }
 
-  // === ❌ Cache Key Mess-up #3 ===
+  // === ❌ Cache Key Mess-up #3 [hard⭐️] ===
   private final CacheManager cacheManager;
 
-  // a hard one:
   public Big20MB inquiryKey1(Inquiry inquiry) {
     return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
         .get(inquiry, () -> {
-          inquiryRepo.save(inquiry); // last commit: they prompted me to save it - @vibe_coder😎
+          inquiryRepo.save(inquiry); // blame: saved it 😎
           return fetchData();
         });
   }
@@ -97,13 +95,13 @@ class CacheService {
   private final InquiryRepo inquiryRepo;
 
   public Big20MB inquiryKey2(Inquiry inquiry) {
-    return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
-        .get(inquiry, () -> fetchData());
+    return cacheManager.getCache("inquiries")
+        .get(inquiry, () -> fetchData()); // @see caller
   }
 }
 
 @Data
-@Entity // generates hash/equals (dangerous if mutable)
+@Entity // generated hash/equals is dangerous if mutates
 class Inquiry {
   @GeneratedValue
   @Id
@@ -130,7 +128,7 @@ public class Leak12_Caching {
     if (date == null) {
       date = LocalDate.now();
     }
-    Big20MB data = cacheService.getTodayFex(date);
+    Big20MB data = cacheService.getForeignExchangeRates(date);
     return "Data from cache for today = " + data + "<br>" +
            getUsedHeapHuman() + "<p>" +
            "also try Jan " +

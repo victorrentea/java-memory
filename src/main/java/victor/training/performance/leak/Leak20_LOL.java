@@ -24,7 +24,7 @@ import java.nio.file.Files;
 @RequestMapping("leak20")
 public class Leak20_LOL { //WIP
   //language=xml
-  private static final String EXPECTED_XML = """
+  private static final String EXPECTED_SANE_XML = """
       <point><x>2</x><y>3</y></point>
       """;
   @Data
@@ -54,7 +54,7 @@ public class Leak20_LOL { //WIP
   private final File lolBombXml = new File("lolbomb.xml");
   @PostConstruct
   public void writeXmlFilesOnDisk() throws IOException {
-    Files.writeString(expectedXml.toPath(), EXPECTED_XML);
+    Files.writeString(expectedXml.toPath(), EXPECTED_SANE_XML);
     Files.writeString(lolBombXml.toPath(), LOL_BOMB_XML);
     System.setProperty("jdk.xml.entityExpansionLimit", "200000000");
   }
@@ -80,7 +80,7 @@ public class Leak20_LOL { //WIP
   @GetMapping
   public String home()  {
     // language=html
-    String expectedXmlHtmlEncoded = EXPECTED_XML.replace("<","&lt;").replace(">","&gt;").replace("\n","<br/>");
+    String expectedXmlHtmlEncoded = EXPECTED_SANE_XML.replace("<","&lt;").replace(">","&gt;").replace("\n","<br/>");
     return """
           <form action='/leak20' method='post' enctype='multipart/form-data' target='_blank'>
               <input type='file' name='file' />
