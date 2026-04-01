@@ -5,12 +5,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
+
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
+import static victor.training.performance.util.PerformanceUtil.*;
 
 /**
  * java.net.http.HttpClient creates its own thread pool + NIO selector per instance.
@@ -27,40 +28,16 @@ import java.time.Duration;
 @RestController
 @RequestMapping("leak25")
 public class Leak25_HttpClient {
-
-   // ❌ BAD: creating a new HttpClient per request
    @GetMapping
    public String leaky() throws Exception {
-      HttpClient client = HttpClient.newBuilder()
-          .connectTimeout(Duration.ofSeconds(5))
-          .build();
-      // Should be: try (HttpClient client = HttpClient.newBuilder()...build()) {
-
-      HttpResponse<String> response = client.send(
-          HttpRequest.newBuilder(URI.create("https://httpbin.org/get")).build(),
-          HttpResponse.BodyHandlers.ofString()
-      );
-      // client.close() is never called!
-      // Client's thread pool + selector + connections stay alive until GC
-
-      int threadCount = ManagementFactory.getThreadMXBean().getThreadCount();
-      log.info("Response: {} bytes, total JVM threads: {}",
-          response.body().length(), threadCount);
-      return "OK, threads=" + threadCount;
+      var httpClient = HttpClient.newBuilder().build(); // ❌
+      var response = httpClient.send(
+          HttpRequest.newBuilder(URI.create("http://localhost:8080/actuator/health")).build(),
+          ofString());
+      return ("OK got %d bytes | threads: %d | heap: %s | RSS: %s")
+          .formatted(response.body().length(), getThreadCount(), getUsedHeapHuman(), getProcessMemoryHuman());
    }
-
-   // ✅ GOOD: reuse a single HttpClient (singleton)
-   // private static final HttpClient SHARED_CLIENT = HttpClient.newBuilder()
-   //     .connectTimeout(Duration.ofSeconds(5))
-   //     .build();
-   //
-   // @GetMapping("/fixed")
-   // public String fixed() throws Exception {
-   //     HttpResponse<String> response = SHARED_CLIENT.send(
-   //         HttpRequest.newBuilder(URI.create("https://httpbin.org/get")).build(),
-   //         HttpResponse.BodyHandlers.ofString());
-   //     return "OK, threads=" + ManagementFactory.getThreadMXBean().getThreadCount();
-   // }
+      // Client's thread pool + selector + connections stay alive until GC
 }
 
 /**

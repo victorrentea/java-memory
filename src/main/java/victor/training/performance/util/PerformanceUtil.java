@@ -205,6 +205,10 @@ public class PerformanceUtil {
     return String.format("%,d B", usedHeapBytes);
   }
 
+  public static int getThreadCount() {
+    return ManagementFactory.getThreadMXBean().getThreadCount();
+  }
+
   public static long getUsedHeapBytes() {
     System.gc();
     return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
