@@ -34,7 +34,7 @@ public class Leak3_SubList {
     }
     return "lastTen.size = " + lastTen.size() + done();
   }
-  // TODO
+  // TODO 
   //  - leak appears under load🔥
   //  - analyze retained heap using
   //    - VisualVM - too slow 🚫

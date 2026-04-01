@@ -23,7 +23,6 @@ import java.util.List;
 
 import static victor.training.performance.util.PerformanceUtil.*;
 
-@SuppressWarnings({"resource", "OverlyBroadThrowsClause"})
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -54,6 +53,37 @@ public class Leak21_FragmentedNative { //WIP
            "<br> diff = " + humanSize(osRssBytes()-bufferTotalSize)
            ;
   }
-
-
 }
+// Credits: a kind soul at Devoxx BE 2025
+
+/*
+ NATIVE MEMORY FRAGMENTATION (off-heap, via malloc)
+ ===================================================
+
+    ██████  ██████  ██████  ██████  ██████ <- 1) allocation
+
+    ██████  ░░░░░░  ██████  ░░░░░░  ██████ <- 2) free up chess pattern
+     used    free    used    free
+
+    ███████  ░░░░░░░  ███████ 3+4) next allocation + free
+
+    ████████  ░░░░░░░░  ████████ 5+6) next allocation + free, etc:
+
+ ❌ Full memory layout after 3 rounds (one row):
+
+    ██░░██░░██░░██░░████░░████░░██████████░░██████████░░██████████░░
+    ^^    ^^    ^^    ^^      ^^      ^^           ^^           ^^
+    r1 r1 r1 r1  r2    r2      r3          r3          r3
+          ↑ wasted gaps between all of them, never reused ↑
+
+    RSS keeps growing! Live data ≈ 50% of RSS. The rest = wasted gaps.
+
+ 4) WITHOUT fragmentation (frag=false): all buffers contiguous, no gaps:
+
+    ████████████████████████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    ^^^^^^^^^^^^^^^^^ all live buffers ^^^^^^^^^^^^^^^^  free space at end → reusable!
+    RSS ≈ live data. No waste.
+
+ Invisible to heap dumps & GC (off-heap!). Detect via: RSS vs heap, NMT, pmap.
+ Fix: pool buffers (Netty), use jemalloc/tcmalloc, set -XX:MaxDirectMemorySize.
+*/

@@ -2,34 +2,29 @@ package victor.training.performance.leak;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
-import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 
 @Slf4j
 @RestController
-@RequestMapping("leak23") // Thanks @oleg
+@RequestMapping("leak23")
 @RequiredArgsConstructor
 public class Leak23_NumberParse {
-  @GetMapping // http://localhost:8080/leak23?uuid=51635621364e981261465&number=1E10
-  public void parse(@RequestParam Map<String, String> json) throws InterruptedException, ExecutionException {
-    log.info("Got: {}", json);
+  @GetMapping
+  // ✅ expected http://localhost:8080/leak23?number=500.2
+  // ✅ expected http://localhost:8080/leak23?number=1E10
+  // ❌ boom: http://localhost:8080/leak23?number=1E10&uuid=51635621364e981261465&
+  public String parse(@RequestParam Map<String, String> json) throws InterruptedException, ExecutionException {
+    log.info("Raw JSON: {}", json);
     autoParse(json);
-    log.info("First value.size={}", json.values().iterator().next().length());
-    log.info("JSON: " + json);
+    log.info("Auto-parsed JSON: {}", json);
+    return "OK✅";
   }
 
   private static final Pattern SCIENCE_NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+[eE][-+]?\\d+");
@@ -42,3 +37,5 @@ public class Leak23_NumberParse {
     }
   }
 }
+
+// Credits: @oleg
