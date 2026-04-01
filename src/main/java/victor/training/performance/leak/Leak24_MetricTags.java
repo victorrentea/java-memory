@@ -15,11 +15,11 @@ public class Leak24_MetricTags {
   private final MeterRegistry meterRegistry;
   private final RestTemplate restTemplate;
 
-  @GetMapping("leak24/{notificationUUID}")
-  public String endpoint(@PathVariable String notificationUUID) {
-    String url = "https://example.com/notification/" + notificationUUID;
+  @GetMapping("leak24/{uuid}")
+  public String endpoint(@PathVariable String uuid) {
+    String url = "http://localhost:8080/actuator/health?id=" + uuid;
 
-    meterRegistry.timer("sas", "notificationId", notificationUUID)
+    meterRegistry.timer("sas", "notificationId", uuid)
         .record(() -> restTemplate.getForEntity(url, String.class));
 
     return "Try other ids and check the metrics http_client_requests_seconds_* at http://localhost:8080/actuator/prometheus";
