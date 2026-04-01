@@ -109,6 +109,8 @@ class Leak6Config {
         }
       };
     });
+    // or since Spring Boot 3.2+ with io.micrometer:context-propagation dependency:
+    // executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
     return executor;
   }
 }
