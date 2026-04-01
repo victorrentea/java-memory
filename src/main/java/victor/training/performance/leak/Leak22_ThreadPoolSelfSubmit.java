@@ -39,7 +39,7 @@ class Confused {
 
   @Async("executor3")
   public CompletableFuture<String> asyncDeadlock() { // enter this with 3 parallel API calls
-    // 🤔 I have to do two API calls - let me do them in parallel
+    // 🤔 I have to do two API calls - let me do them in parallel -sr
     sleepMillis(50);
     CompletableFuture<String> result1Promise = supplyAsync(() -> apiCall1(), executor3);
     String result2 = apiCall2();
