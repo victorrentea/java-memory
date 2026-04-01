@@ -25,7 +25,7 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 public class Leak22_ThreadPoolSelfSubmit {
   private final Confused confused;
 
-  @GetMapping
+  @GetMapping // runs in 1 of the 200 Tomcat HTTP threads
   public String deadlock() throws InterruptedException, ExecutionException {
     return confused.asyncDeadlock().get(); // call it 3x in parallel
   }
@@ -37,10 +37,12 @@ public class Leak22_ThreadPoolSelfSubmit {
 class Confused {
   private final ThreadPoolTaskExecutor executor3; // has 3 threads
 
-  @Async("executor3")
+  // ⚠️ Spring Magic ⚠️
+  @Async("executor3") // Spring runs the method in 1 of the 3 threads of "executor3" pool
   public CompletableFuture<String> asyncDeadlock() { // enter this with 3 parallel API calls
     // 🤔 I have to do two API calls - let me do them in parallel -sr
     sleepMillis(50);
+    // submit work to the same executor3
     CompletableFuture<String> result1Promise = supplyAsync(() -> apiCall1(), executor3);
     String result2 = apiCall2();
     return result1Promise.thenApply(s1 -> s1 + result2);

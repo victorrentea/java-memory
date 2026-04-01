@@ -22,10 +22,33 @@ public class Leak2_Inner {
   public String endpoint() {
     Calculator calculator = new CalculatorFactory().create();
     work(calculator);
+
+
     return done();
   }
   private void work(Calculator calculator) {
     sleepSeconds(30); // time to take a heap dump
+    // access the CalculatorFactory instance via reflection from the calculator instance param
+    try {
+      // Find the synthetic field referencing the enclosing instance
+      var fields = calculator.getClass().getDeclaredFields();
+      System.out.println("Calculator has " + fields.length + " declared fields");
+      boolean found = false;
+      for (var f : fields) {
+        System.out.println("  Field: " + f.getName() + " type: " + f.getType().getSimpleName() + " synthetic: " + f.isSynthetic());
+        if (f.getType() == CalculatorFactory.class) {
+          f.setAccessible(true);
+          CalculatorFactory outer = (CalculatorFactory) f.get(calculator);
+          System.out.println("  ✅ Outer instance found via field '" + f.getName() + "': " + outer);
+          found = true;
+        }
+      }
+      if (!found) {
+        System.out.println("  ⚠️ No outer reference field found! JDK " + Runtime.version() + " optimized it away (javac ≥21)");
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   //<editor-fold desc="Similar entry points /implem /subclass">
@@ -46,10 +69,10 @@ public class Leak2_Inner {
 }
 class CalculatorFactory {
   private final Big20MB bigMac = new Big20MB(); // 🍔
-//  public class Calculator {// TODO what's the connection with bigMac
-  public static class Calculator {// TODO what's the connection with bigMac
+  private final String someSmallString = "a";
+  public class Calculator {// TODO what's the connection with bigMac
     public String calculate() {
-      return "Answer: " + 42;
+      return "Answer: " + someSmallString + 42;
     }
   }
 
