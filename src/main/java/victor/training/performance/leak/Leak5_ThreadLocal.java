@@ -2,7 +2,7 @@ package victor.training.performance.leak;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import victor.training.performance.leak.obj.Big20MB;
+import victor.training.performance.leak.obj.Big1MB;
 
 import static victor.training.performance.util.PerformanceUtil.done;
 import static victor.training.performance.util.PerformanceUtil.getUsedHeapHuman;
@@ -11,15 +11,20 @@ import static victor.training.performance.util.PerformanceUtil.getUsedHeapHuman;
 public class Leak5_ThreadLocal {
   private static final ThreadLocal<RequestContext> threadLocal = new ThreadLocal<>();
 
-  record RequestContext(String currentUser, Big20MB big) {
+  record RequestContext(String currentUser, Big1MB big) {
   }
 
   @GetMapping("leak5")
   public String controller() {
     String currentUsername = "john.doe"; // from request header/JWT/http session
-    threadLocal.set(new RequestContext(currentUsername, new Big20MB()));
+    threadLocal.set(new RequestContext(currentUsername, new Big1MB()));
+    try {
 
-    service();
+      service(); // MDC, telemetry, SEcurity, Transactions
+    } finally {
+      threadLocal.remove();
+
+    }
 
     return "Magic can hurt " + done() + "<p>" + getUsedHeapHuman();
   }

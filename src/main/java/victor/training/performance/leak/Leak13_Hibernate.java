@@ -42,6 +42,7 @@ public class Leak13_Hibernate {
     log.debug("Exporting to file: {}", file.getAbsolutePath());
     try (PrintWriter writer = new PrintWriter(file)) {
       repo.streamAll() // iterates rows w/o loading all in-mem ≈ while(resultSet.next()) {
+          .peek(entityManager::detach)
           .map(BigEntity::getDescription)
           .forEach(writer::write);
     }

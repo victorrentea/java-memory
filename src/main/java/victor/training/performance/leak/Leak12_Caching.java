@@ -41,6 +41,7 @@ class CacheService {
   }
 
   // === ☢️ RISK: DIY Cache (NIH Syndrome?) ===
+  // use caffeine / ehcache(disk)
   // static
   private final Map<LocalDate, Big20MB> fexCache = synchronizedMap(new HashMap<>());
   public Big20MB getForeignExchangeRates(LocalDate date) {
@@ -58,25 +59,21 @@ class CacheService {
   }
 
   // === ❌ Cache Key Mess-up #1 ===
-  @Cacheable("signature") // AOP proxy returns the previous value for the same parameter(s)
-  public Big20MB fetchById(Long id, long requestTime) { // blame: added request time param -- 😎vibe-coded with Haiku
+  // AOP proxy returns the previous value for the same parameter(s)
+  @Cacheable("signature")
+  public Big20MB fetchById(Long id, long requestTime) {
+    // blame: added request time param -- 😎vibe-coded with Haiku
     log.debug("Fetch contract id:{} at:{}", id, requestTime);
     return fetchData();
   }
 
   // === ❌ Cache Key Mess-up #2 ===
-  @RequiredArgsConstructor
-  @Getter
-  @Setter
-  static class InquiryParams {
-    private final long contractId;
-    private final int year;
-    private final int month;
+  record InquiryParams(long contractId, int year, int month) {
   }
 
   @Cacheable("invoices")
   public Big20MB inquiryKey(InquiryParams params) { // blame: extracted params in a new class 😎
-    log.debug("Fetch invoice for {} {} {}", params.getContractId(), params.getYear(), params.getMonth());
+    log.debug("Fetch invoice for {} {} {}", params.contractId(), params.year(), params.month());
     return fetchData();
   }
 
@@ -87,6 +84,9 @@ class CacheService {
     return cacheManager.getCache("inquiries") // ≈ @Cacheable("inquiries")
         .get(inquiry, () -> {
           inquiryRepo.save(inquiry); // blame: saved it 😎
+          // id is assigned by save, but hashCode/equals
+          // are generated on all fields,
+          // so the key is different before/after save → cache miss
           return fetchData();
         });
   }

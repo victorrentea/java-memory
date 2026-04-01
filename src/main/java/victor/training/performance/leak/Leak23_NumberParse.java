@@ -27,7 +27,8 @@ public class Leak23_NumberParse {
     return "OK✅";
   }
 
-  private static final Pattern SCIENCE_NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+[eE][-+]?\\d+");
+  private static final Pattern SCIENCE_NUMBER = Pattern.compile
+      ("[-+]?\\d*\\.?\\d+[eE][-+]?\\d+");
   private static void autoParse(Map<String, String> json) {
     for (String key : json.keySet()) {
       String valueString = json.get(key);

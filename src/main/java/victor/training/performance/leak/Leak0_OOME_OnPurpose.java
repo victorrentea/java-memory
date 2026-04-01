@@ -12,7 +12,6 @@ public class Leak0_OOME_OnPurpose {
   public String causeOOME() {
     List<int[]> boom = new ArrayList<>();
     while (true) boom.add(new int[1000_000]);
-
     // TODO
     //  + JVM arg: -Xmx500m
     //  > Experiment: turn variable into field

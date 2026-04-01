@@ -24,7 +24,6 @@ public class Leak2_Inner {
     work(calculator);
     return done();
   }
-
   private void work(Calculator calculator) {
     sleepSeconds(30); // time to take a heap dump
   }
@@ -45,11 +44,10 @@ public class Leak2_Inner {
   }
   //</editor-fold>
 }
-
 class CalculatorFactory {
   private final Big20MB bigMac = new Big20MB(); // 🍔
-
-  public class Calculator {// TODO what's the connection with bigMac
+//  public class Calculator {// TODO what's the connection with bigMac
+  public static class Calculator {// TODO what's the connection with bigMac
     public String calculate() {
       return "Answer: " + 42;
     }
@@ -71,13 +69,16 @@ class CalculatorFactory {
     // TODO how about ->, ::
   }
   //</editor-fold>
-
+  {
+    System.out.printf("it works😱😱");
+  }
   //<editor-fold desc="Map init in Java <= 8">
   public Map<String, Integer> mapInit() {
-    return new HashMap<>() {{
-      put("one", 1);
-      put("two", 2);
-    }};
+//    return new HashMap<>() {{
+//        put("one", 1);
+//        put("two", 2);
+//      }};
+    return Map.of("one", 1, "two", 2);
   }
   //</editor-fold>
 }

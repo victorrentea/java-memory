@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,7 @@ import static victor.training.performance.util.PerformanceUtil.*;
 public class Leak6_Async {
   private final FileProcessor processor;
   private static final AtomicInteger counter = new AtomicInteger(0);
+  private final ThreadPoolTaskExecutor myExecutor;
 
   @GetMapping("leak6/download")
   public String download() {
@@ -41,7 +43,14 @@ public class Leak6_Async {
     MDC.put("traceId", "" + taskId);
     String data = fetchData(MB(10)); // or smaller files at a higher rate
     log.info("Got {} bytes", data.length());
-    CompletableFuture.runAsync(() -> processor.process(data, taskId));
+    CompletableFuture.runAsync(() -> processor.process(data, taskId), myExecutor);
+    // ⚠️You never when it's done
+    // error might get lost
+    // do I want to stop it? how to?
+    // lambda keeps reference large mem blob☢️
+    // ☢️☢️☢️☢️what threadpool: ForkJoinPool.commonPool shared with any parallelStream or any other ...Async method of CF.
+    // overwhelmed with requests to this api -> push in in-mem queue with a max size = INFINITE!!!!🚨🚨🚨🚨🚨🚨🚨🚨
+
     return """
         Long task submitted: #%d<br>
         Data now in memory: %,d bytes<br>
@@ -98,19 +107,20 @@ class Leak6Config {
     executor.setThreadNamePrefix("myexec-");
     executor.initialize();
     // lift ThreadLocal data from the submitter thread:
-    executor.setTaskDecorator(task -> {
-      var submitterMDC = MDC.getCopyOfContextMap();
-      return () -> {
-        try {
-          MDC.setContextMap(submitterMDC);
-          task.run();
-        } finally {
-          MDC.clear();
-        }
-      };
-    });
+//    executor.setTaskDecorator(task -> {
+//      var submitterMDC = MDC.getCopyOfContextMap();
+//      // submiter thread
+//      return () -> {
+//        try {
+//          MDC.setContextMap(submitterMDC); // worker thread
+//          task.run();
+//        } finally {
+//          MDC.clear();
+//        }
+//      };
+//    });
     // or since Spring Boot 3.2+ with io.micrometer:context-propagation dependency:
-    // executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
+//     executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
     return executor;
   }
 }
