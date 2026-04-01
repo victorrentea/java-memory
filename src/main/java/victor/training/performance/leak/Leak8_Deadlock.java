@@ -10,66 +10,63 @@ import static victor.training.performance.util.PerformanceUtil.sleepMillis;
 @RestController
 @RequestMapping("leak8")
 public class Leak8_Deadlock {
-	@GetMapping("/one")
-	public String one() throws Exception {
-		A.entry();
-		return howtoDeadlockInstructions("two");
-	}
+  @GetMapping("/one")
+  public String one() throws Exception {
+    A.entry();
+    return howtoDeadlockInstructions("two");
+  }
 
-	@GetMapping("/two")
-	public String two() throws Exception {
-		B.entry();
-		return howtoDeadlockInstructions("one");
-	}
+  @GetMapping("/two")
+  public String two() throws Exception {
+    B.entry();
+    return howtoDeadlockInstructions("one");
+  }
 
-	static class A {
-		public static synchronized void entry() {
-			log("Entered A.entry()");
-			sleepMillis(3_000);
-			B.internal();
-			log("Exiting A.entry()");
-		}
+  static class A {
+    public static synchronized void entry() {
+      log("Entered A.entry()");
+      sleepMillis(3_000);
+      B.internal();
+      log("Exiting A.entry()");
+    }
 
-		public static synchronized void internal() {
-			log("Entered A.internal()");
-			sleepMillis(3_000);
-			log("Exiting A.internal()");
-		}
-	}
+    public static synchronized void internal() {
+      log("Entered A.internal()");
+      sleepMillis(3_000);
+      log("Exiting A.internal()");
+    }
+  }
 
 
-	static class B {
-		public static synchronized void entry() {
-			log("Entered B.entry()");
-			sleepMillis(3_000);
-			A.internal();
-			log("Exiting B.entry()");
-		}
+  static class B {
+    public static synchronized void entry() {
+      log("Entered B.entry()");
+      sleepMillis(3_000);
+      A.internal();
+      log("Exiting B.entry()");
+    }
 
-		public static synchronized void internal() {
-			log("Entered B.internal()");
-			sleepMillis(3_000);
-			log("Exiting B.internal()");
-		}
-	}
+    public static synchronized void internal() {
+      log("Entered B.internal()");
+      sleepMillis(3_000);
+      log("Exiting B.internal()");
+    }
+  }
 
 // === === === === === === === Support code  === === === === === === ===
 
   @GetMapping
   public String home() {
-    return "call <a href='./one'>one</a> and <a href='./two'>two</a> within 3 secs..";
+    return "call <a href='/leak8/one'>one</a> and <a href='leak8/two'>two</a> within 3 secs..";
   }
 
   private String howtoDeadlockInstructions(String other) {
     return """
         Refresh the page, then <a href='%s' target='_blank'>call /%s</a> 
         within 3 seconds to produce the deadlock.<br>
-        Expected Effect: both tabs hang (never finish loading).""".formatted(other,other);
+        Expected Effect: both tabs hang (never finish loading).""".formatted(other, other);
   }
 }
-
-
-
 
 
 /**
