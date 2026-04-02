@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "mat-mcp": {
+      "type": "stdio",
+      "command": "/Users/victorrentea/workspace/java-memory/mat-mcp/launch-mat-mcp.sh",
+      "args": []
+    }
+  }
+}
