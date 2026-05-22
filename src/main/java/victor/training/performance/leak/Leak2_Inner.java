@@ -24,17 +24,15 @@ public class Leak2_Inner {
     work(calculator);
     return done();
   }
-
   private void work(Calculator calculator) {
     sleepSeconds(30); // time to take a heap dump
   }
-
   //<editor-fold desc="Similar entry points /implem /subclass">
   @GetMapping("implem")
   public String implem() {
-    Stream<String> supplier = new CalculatorFactory().anonymousVsLambdas(List.of("a"));
+    List<String> list = new CalculatorFactory().anonymousVsLambdas(List.of("a")).toList();
     sleepSeconds(30); // time to take a heap dump
-    return supplier.toList().toString();
+    return list.toString();
   }
 
   @GetMapping("subclass")
@@ -49,7 +47,7 @@ public class Leak2_Inner {
 class CalculatorFactory {
   private final Big20MB bigMac = new Big20MB(); // 🍔
 
-  public class Calculator {// TODO what's the connection with bigMac
+  public static class Calculator {// TODO what's the connection with bigMac
     public String calculate() {
       return "Answer: " + 42;
     }
@@ -62,22 +60,33 @@ class CalculatorFactory {
   //<editor-fold desc="Lambdas vs Anonymous implementation">
   public Stream<String> anonymousVsLambdas(List<String> input) {
     return input.stream()
-        .filter(new Predicate<String>() {
-          @Override
-          public boolean test(String s) {
-            return !s.isBlank();
-          }
-        });
+        .filter(s -> !s.isBlank() /*&& bigMac!=null*/)
+
+//        .filter(new Predicate<String>() {
+//          @Override
+//          public boolean test(String s) {
+//            return !s.isBlank();
+//          }
+//        })
+        ;
     // TODO how about ->, ::
   }
   //</editor-fold>
 
   //<editor-fold desc="Map init in Java <= 8">
   public Map<String, Integer> mapInit() {
-    return new HashMap<>() {{
+//    HashMap<String, Integer> map = new HashMap<>();
+//    map.put("one", 1);
+//    map.put("two", 2);
+//    return map;
+
+    return new HashMap<>() { // anonymous subclass of HashMap
+      { // instance init block leaks in java25
       put("one", 1);
       put("two", 2);
     }};
+
+    //return Map.of("one", 1, "two", 2); // Java 9+ - immutable map
   }
   //</editor-fold>
 }

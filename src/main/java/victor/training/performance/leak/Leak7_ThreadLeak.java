@@ -21,6 +21,7 @@ public class Leak7_ThreadLeak {
     ExecutorService pool = Executors.newFixedThreadPool(2);
     var f1 = pool.submit(() -> apiCallA());
     var f2 = pool.submit(() -> apiCallB());
+    pool.shutdown();
     return f1.get() + f2.get() + done() + "<p>" + getUsedHeapHuman() + "<p>" + getProcessMemoryHuman();
   }
 

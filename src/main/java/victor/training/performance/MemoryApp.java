@@ -29,6 +29,7 @@ class MemoryApp {
 
   @EventListener
   void onStart(ApplicationReadyEvent event) {
+//    "this".intern()
     log.info("🌟🌟🌟 Started at http://localhost:8080 pid {} javac {} 🌟🌟🌟",
         ProcessHandle.current().pid(),
         getJavacVersion(MemoryApp.class));

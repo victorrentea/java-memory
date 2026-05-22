@@ -30,7 +30,8 @@ public class Leak3_SubList {
 
     lastTen.add(access);
     if (lastTen.size() > 10) {
-      lastTen = lastTen.subList(1, lastTen.size()); // remove first
+//      lastTen = lastTen.subList(1, lastTen.size()); // remove first
+      lastTen.remove(0);
     }
     return "lastTen.size = " + lastTen.size() + done();
   }

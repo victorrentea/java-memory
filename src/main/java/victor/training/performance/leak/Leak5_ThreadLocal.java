@@ -19,7 +19,11 @@ public class Leak5_ThreadLocal {
     String currentUsername = "john.doe"; // from request header/JWT/http session
     threadLocal.set(new RequestContext(currentUsername, new Big20MB()));
 
-    service();
+    try {
+      service();
+    } finally {
+      threadLocal.remove();
+    }
 
     return "Magic can hurt " + done() + "<p>" + getUsedHeapHuman();
   }

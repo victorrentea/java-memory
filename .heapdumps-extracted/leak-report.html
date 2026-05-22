@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Heap-dump root cause report — Devoxx BE 2025</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #161922;
+    --card-2: #1c2030;
+    --ink: #e6e8ee;
+    --muted: #8a92a6;
+    --accent: #7ee787;
+    --warn:   #f3b54a;
+    --danger: #ff7b7b;
+    --link:   #79b8ff;
+    --border: #242938;
+    --code-bg: #0b0d12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  header {
+    padding: 36px 48px 18px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #1a1f2c, #0f1115);
+  }
+  header h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -0.01em; }
+  header .sub { color: var(--muted); font-size: 14px; }
+  header .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 12px; background: var(--card-2); color: var(--muted);
+    border: 1px solid var(--border); margin-left: 6px;
+  }
+  main { padding: 24px 48px 60px; max-width: 1240px; }
+  .toc {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px 16px; margin: 16px 0 32px;
+    padding: 16px; background: var(--card); border-radius: 10px; border: 1px solid var(--border);
+  }
+  .toc a {
+    color: var(--ink); text-decoration: none; padding: 6px 8px; border-radius: 6px;
+    display: flex; justify-content: space-between; gap: 10px;
+  }
+  .toc a:hover { background: var(--card-2); color: var(--link); }
+  .toc .heap-only::after { content: "heap"; color: var(--accent); font-size: 11px; }
+  .toc .src-needed::after { content: "src"; color: var(--warn); font-size: 11px; }
+  section.leak {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 14px 0;
+  }
+  section.leak h2 {
+    margin: 0 0 4px; font-size: 19px; letter-spacing: -0.005em;
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px;
+  }
+  section.leak h2 .file {
+    color: var(--muted); font-weight: normal; font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  section.leak .tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(126, 231, 135, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(126, 231, 135, 0.4);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  section.leak .tag.src {
+    background: rgba(243, 181, 74, 0.12);
+    color: var(--warn);
+    border-color: rgba(243, 181, 74, 0.4);
+  }
+  section.leak .stats {
+    display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted);
+    font-size: 13px; margin: 8px 0 14px;
+  }
+  section.leak .stats span b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  section.leak h3 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin: 16px 0 6px;
+  }
+  section.leak p { margin: 6px 0; }
+  section.leak ul { margin: 6px 0 6px 20px; padding: 0; }
+  section.leak code {
+    background: var(--code-bg); border: 1px solid var(--border);
+    padding: 0px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px; color: #d3d9e6;
+  }
+  section.leak pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    padding: 12px 14px; border-radius: 8px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.45; margin: 8px 0;
+  }
+  .pill {
+    display: inline-block; padding: 1px 7px; font-size: 11px;
+    border-radius: 4px; background: var(--card-2); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  footer { color: var(--muted); font-size: 12px; padding: 22px 48px; border-top: 1px solid var(--border); }
+  .legend { display:flex; gap:18px; color: var(--muted); font-size:13px; margin-top:4px; align-items:center;}
+  .legend .dot { display:inline-block; width:10px; height:10px; border-radius:999px; vertical-align:middle; margin-right:6px; }
+  .dot.heap { background: var(--accent); }
+  .dot.src  { background: var(--warn); }
+  hr.faint { border: 0; border-top: 1px dashed var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Heap-dump root cause report
+    <span class="badge">Devoxx BE 2025</span>
+    <span class="badge">13 dumps</span>
+  </h1>
+  <div class="sub">Source folder: <code>/Users/victorrentea/My&nbsp;Drive/Cursuri/Performance/heapdumps-devoxx.be-2025</code></div>
+  <div class="legend">
+    <span><span class="dot heap"></span>diagnosed from heap alone</span>
+    <span><span class="dot src"></span>required source-code lookup</span>
+  </div>
+</header>
+
+<main>
+
+  <nav class="toc">
+    <a href="#l1"  class="heap-only"><span>Leak 1 — long stack frame</span></a>
+    <a href="#l2"  class="heap-only"><span>Leak 2 — hidden links ×3</span></a>
+    <a href="#l3"  class="heap-only"><span>Leak 3 — ArrayList.subList()</span></a>
+    <a href="#l4"  class="heap-only"><span>Leak 4 — XML DOM retention</span></a>
+    <a href="#l5"  class="heap-only"><span>Leak 5 — ThreadLocal + pool</span></a>
+    <a href="#l6"  class="heap-only"><span>Leak 6 — FJP common-pool flood</span></a>
+    <a href="#l7"  class="heap-only"><span>Leak 7 — unbounded thread creation</span></a>
+    <a href="#l8"  class="heap-only"><span>Leak 8 — Tomcat thread deadlock</span></a>
+    <a href="#l10" class="heap-only"><span>Leak 10 — shutdown hooks pin closures</span></a>
+    <a href="#l11" class="heap-only"><span>Leak 11 — idempotency filter HashSet</span></a>
+    <a href="#l13" class="heap-only"><span>Leak 13 — Hibernate L1 cache</span></a>
+    <a href="#l14a" class="heap-only"><span>Leak 14a — classloader (instance ref)</span></a>
+    <a href="#l14b" class="heap-only"><span>Leak 14b — classloader (Timer thread)</span></a>
+    <a href="#l16" class="heap-only"><span>Leak 16 — GUI observer pattern</span></a>
+  </nav>
+
+  <p style="color: var(--muted); margin: 14px 0 22px;">
+    Approach: for each dump, load it via Eclipse MAT (MCP backend), inspect <code>biggest_objects</code> for top retainers and the histogram for instance-count outliers, then walk <code>referrers()</code> chains.
+    Every diagnosis below was made from heap evidence only — <strong>no source files in the leak project were read</strong>.
+    Class names visible in the dump (e.g.&nbsp;<code>Leak3_SubList</code>, <code>IdempotencyFilter</code>) are part of the dump's data and were used to confirm the pattern, but the contents of the project's <code>.java</code> files were not consulted.
+  </p>
+
+  <!-- =================== LEAK 1 =================== -->
+  <section class="leak" id="l1">
+    <h2>Leak 1 — Long stack frame keeps local variable alive
+        <span class="tag">heap-only</span>
+        <span class="file">Leak1_long_frame.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>155&nbsp;MB</b></span>
+      <span>top retainer: <b>100&nbsp;MB</b></span>
+      <span>retainer class: <code>victor.training.performance.leak.obj.Big100MB</code></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>Top retainer is a single <code>Big100MB</code> instance (retained 104,857,664 B) wrapping a single <code>int[1_000_000]</code>.</li>
+      <li><code>referrers()</code> on the <code>Big100MB</code> returns <strong>empty</strong> — no heap object refers to it.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>An object with no heap referrer that is still in the dump must be rooted as a <strong>Java Local</strong> on a thread's stack frame. A method allocated <code>Big100MB</code> as a local variable and is currently <em>still on the stack</em> (likely sleeping, blocking on I/O, or in a long-running loop). While that frame exists, the local stays a GC root.</p>
+    <p><strong>Fix:</strong> reduce the lifetime of the local — process &amp; release the big object before the long-running operation, or null out the reference once you are done with it.</p>
+  </section>
+
+  <!-- =================== LEAK 2 =================== -->
+  <section class="leak" id="l2">
+    <h2>Leak 2 — Three “hidden links” pinning enclosing instances
+        <span class="tag">heap-only</span>
+        <span class="file">Leak2_hiddenLinks_all3.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>113&nbsp;MB</b></span>
+      <span>top retainer: <b>20 MB ×&nbsp;~4</b></span>
+      <span>retainer classes:
+        <code>CalculatorFactory$1</code>,
+        <code>CalculatorFactory$2</code>,
+        <code>CalculatorFactory$Calculator</code>,
+        <code>ReferencePipeline$2</code>
+      </span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li><code>CalculatorFactory$1</code> — anonymous inner class. Field <code>this$0</code> → <code>CalculatorFactory</code> (which owns a <code>Big20MB</code>).</li>
+      <li><code>CalculatorFactory$2</code> — anonymous subclass of <code>HashMap</code> (double-brace init pattern). Same <code>this$0</code> backlink.</li>
+      <li><code>CalculatorFactory$Calculator</code> — non-static inner class. Same <code>this$0</code> backlink.</li>
+      <li><code>java.util.stream.ReferencePipeline$2</code> — a <code>Stream</code> pipeline retaining its source, capturing the enclosing factory.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>All four are <strong>silent compiler-generated references</strong> to an enclosing object the developer did not realise they were creating: anonymous classes, double-brace init, non-static inner classes, and streams returned from a method. Each surviving instance keeps its 20&nbsp;MB enclosing factory alive.</p>
+    <p><strong>Fix:</strong> make inner classes <code>static</code>; avoid the <code>new HashMap() {{ put(...); }}</code> idiom; do not return live <code>Stream</code>s from methods whose state should die with them.</p>
+  </section>
+
+  <!-- =================== LEAK 3 =================== -->
+  <section class="leak" id="l3">
+    <h2>Leak 3 — <code>ArrayList.subList()</code> pins the whole parent list
+        <span class="tag">heap-only</span>
+        <span class="file">Leak3_SubList.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>73&nbsp;MB</b></span>
+      <span>top retainer: <b>11.7 MB</b></span>
+      <span>retainer: <code>Leak3_SubList.lastTen</code> → <code>ArrayList$SubList</code></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <pre>Leak3_SubList
+   └─ lastTen: ArrayList$SubList   { size = 10, offset = 49991, modCount = 50001 }
+                └─ root: ArrayList { size = 50001 }
+                          └─ elementData: Object[] (9.5 MB)</pre>
+    <h3>Root cause</h3>
+    <p>A field named <code>lastTen</code> holds the result of <code>list.subList(list.size() - 10, list.size())</code>. The <code>SubList</code> is a <strong>view</strong> over the original 50,001-element <code>ArrayList</code> — it stores a reference to the parent (<code>root</code>) and just an offset/size window. So caching the "last 10" prevented GC of all 50,001 elements.</p>
+    <p><strong>Fix:</strong> <code>new ArrayList&lt;&gt;(list.subList(...))</code> to copy out and release the parent.</p>
+  </section>
+
+  <!-- =================== LEAK 4 =================== -->
+  <section class="leak" id="l4">
+    <h2>Leak 4 — XML DOM trees retained via Xerces deferred nodes
+        <span class="tag">heap-only</span>
+        <span class="file">Leak4_XML_DOM.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>85&nbsp;MB</b></span>
+      <span>top retainer: <b>34&nbsp;MB</b></span>
+      <span>retainer: <code>java.util.ArrayList</code> (size = 1000)</span>
+    </div>
+    <h3>Heap evidence — class histogram</h3>
+    <ul>
+      <li><code>com.sun.org.apache.xerces.internal.dom.DeferredTextImpl</code> × <strong>127,000</strong></li>
+      <li><code>com.sun.org.apache.xerces.internal.dom.DeferredElementImpl</code> × <strong>62,000</strong></li>
+      <li><code>com.sun.org.apache.xerces.internal.dom.AttributeMap</code> × <strong>62,000</strong></li>
+      <li>An <code>ArrayList</code> of 1,000 fragments retains 34 MB of DOM nodes.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>Xerces DOM <code>Node</code>s each hold an <code>ownerDocument</code> pointer back to the root <code>Document</code>. Storing <em>any</em> node from a parsed DOM in a collection therefore pins the <em>entire</em> document subtree.</p>
+    <p><strong>Fix:</strong> extract the primitive data you need (<code>String</code>s, numbers) before letting the parsed tree go out of scope; or use a streaming parser (SAX/StAX) for large inputs.</p>
+  </section>
+
+  <!-- =================== LEAK 5 =================== -->
+  <section class="leak" id="l5">
+    <h2>Leak 5 — <code>ThreadLocal</code> in a thread pool
+        <span class="tag">heap-only</span>
+        <span class="file">Leak5-ThreadLocal+ThreadPool.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>260&nbsp;MB</b></span>
+      <span>top retainers: <b>10 ×&nbsp;~20 MB</b> Tomcat workers</span>
+      <span>retainer class: <code>org.apache.tomcat.util.threads.TaskThread</code></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>Top 10 retainers in <code>biggest_objects</code> are <code>TaskThread</code> instances, each retaining ≈20 MB.</li>
+      <li>Below them: many <code>java.lang.ThreadLocal$ThreadLocalMap</code> / <code>...Entry[]</code> structures, each ≈20 MB.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>A <code>ThreadLocal&lt;Big20MB&gt;</code> was populated in a request thread and never <code>remove()</code>d. Because Tomcat reuses pool threads across requests, the entry sits in the worker's <code>ThreadLocalMap</code> until the thread itself dies (i.e., never). Effect: pool-size × ThreadLocal-payload of permanently retained heap.</p>
+    <p><strong>Fix:</strong> always call <code>threadLocal.remove()</code> in a <code>finally</code> (or use a filter/interceptor); for request-scoped data prefer <code>RequestContextHolder</code> or Spring's request scope.</p>
+  </section>
+
+  <!-- =================== LEAK 6 =================== -->
+  <section class="leak" id="l6">
+    <h2>Leak 6 — <code>ForkJoinPool.commonPool()</code> backlog
+        <span class="tag">heap-only</span>
+        <span class="file">Leak6_AsyncFJPCommonPool.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>408&nbsp;MB</b></span>
+      <span>top retainer: <b>~42&nbsp;MB</b> in a single FJP <code>WorkQueue</code></span>
+      <span>retainer: <code>ForkJoinPool$WorkQueue[]</code> + many <code>CompletableFuture$AsyncRun</code> (~10&nbsp;MB each)</span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>A <code>ForkJoinPool$WorkQueue[]</code> retains ~42&nbsp;MB.</li>
+      <li>Each <code>WorkQueue</code> contains a <code>ForkJoinTask[]</code> retaining 20–30&nbsp;MB.</li>
+      <li>The queued tasks are <code>CompletableFuture$AsyncRun</code> instances, each retaining ≈10&nbsp;MB.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>Code uses <code>CompletableFuture.runAsync(...)</code> / <code>supplyAsync(...)</code> <em>without</em> passing an executor, which defaults to the <strong>common ForkJoinPool</strong>. Each task's closure captures a ~10&nbsp;MB blob. Requests outrun consumption, the queue fills up, and every queued task holds its captured data.</p>
+    <p><strong>Fix:</strong> always pass a bounded, dedicated <code>Executor</code> to <code>supplyAsync</code>/<code>runAsync</code>; control concurrency at the source so the queue cannot grow unboundedly.</p>
+  </section>
+
+  <!-- =================== LEAK 7 =================== -->
+  <section class="leak" id="l7">
+    <h2>Leak 7 — Unbounded thread creation
+        <span class="tag">heap-only</span>
+        <span class="file">Leak7_ThreadLeak.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>71&nbsp;MB</b></span>
+      <span>thread count: <b>1,743</b> <code>java.lang.Thread</code> instances</span>
+    </div>
+    <h3>Heap evidence — class histogram</h3>
+    <ul>
+      <li><code>java.lang.Thread</code> — <strong>1,743 instances</strong></li>
+      <li><code>jdk.internal.misc.InnocuousThread</code> — 79</li>
+      <li><code>org.apache.tomcat.util.threads.TaskThread</code> — 202</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>A typical Spring Boot app has 30–60 threads. 1,700+ live <code>Thread</code> instances mean code is creating threads per request or per task without bounds — either <code>new Thread(...).start()</code> or an executor with <code>Integer.MAX_VALUE</code> maximum pool size. Each thread costs ~1 MB of stack (off-heap) plus its heap-resident state; under load this leads to <code>OutOfMemoryError: unable to create new native thread</code>.</p>
+    <p><strong>Fix:</strong> reuse threads via a bounded <code>ThreadPoolExecutor</code>; cap <code>maximumPoolSize</code>; use virtual threads where appropriate.</p>
+  </section>
+
+  <!-- =================== LEAK 8 =================== -->
+  <section class="leak" id="l8">
+    <h2>Leak 8 — Tomcat thread-pool deadlock
+        <span class="tag">heap-only</span>
+        <span class="file">Leak8_deadlock_all_Tomcat.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>71&nbsp;MB</b></span>
+      <span>no large retainer</span>
+      <span>thread count: <b>202</b> <code>TaskThread</code> + 202 <code>WrappingRunnable</code></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>No top retainer exceeds 5 MB — this is <strong>not</strong> a memory leak in the usual sense.</li>
+      <li>Tomcat's worker pool is at its default ceiling (200) and every thread has an active wrapping runnable: every worker is busy / blocked.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>All Tomcat worker threads are blocked, so the server cannot accept new work — symptoms look like a memory problem but the cause is <strong>thread starvation</strong>. Common triggers: a handler that <em>itself</em> calls back into the same server over HTTP and waits for the response (self-deadlock), a shared <code>synchronized</code> lock contention, or a long blocking I/O call without timeouts.</p>
+    <p><strong>Diagnosis next step:</strong> a thread dump (<code>jstack</code>) would show the exact monitor / lock each worker is waiting on — that information is not present in the heap dump.</p>
+  </section>
+
+  <!-- =================== LEAK 10 =================== -->
+  <section class="leak" id="l10">
+    <h2>Leak 10 — Shutdown hooks pin big closures forever
+        <span class="tag">heap-only</span>
+        <span class="file">Leak10_ShutdownHooks.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>155&nbsp;MB</b></span>
+      <span>top retainer: <b>~104&nbsp;MB</b> on a <code>java.lang.Class</code> static</span>
+      <span>retainer: <code>IdentityHashMap</code> → 5 <code>Thread</code>s → <code>OldLib$$Lambda</code></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>A <code>java.lang.Class</code> holds a static <code>IdentityHashMap</code> retaining 104 MB → this is <code>java.lang.ApplicationShutdownHooks.hooks</code>.</li>
+      <li>The map contains 5 <code>Thread</code> instances, each retaining ~20 MB.</li>
+      <li>Each thread's <code>target</code> is an <code>OldLib$$Lambda</code> capturing a 20 MB payload.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>Every call to <code>Runtime.getRuntime().addShutdownHook(thread)</code> registers the thread (and everything it transitively references) in the JVM's static map. Once added, the hook can <em>never</em> be GC'd — it must remain reachable so the JVM can run it on shutdown. Five lambda-carrying threads × 20 MB closures = 100 MB pinned for the JVM's lifetime.</p>
+    <p><strong>Fix:</strong> use <code>removeShutdownHook</code> when you no longer need it; or design the hook to be a tiny lookup (e.g., look up a service via DI) rather than capturing big state in its closure.</p>
+  </section>
+
+  <!-- =================== LEAK 11 =================== -->
+  <section class="leak" id="l11">
+    <h2>Leak 11 — Unbounded idempotency-key store
+        <span class="tag">heap-only</span>
+        <span class="file">Leak11_IdempotencyFilter.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>135&nbsp;MB</b></span>
+      <span>top retainer: <b>61.6&nbsp;MB</b></span>
+      <span>retainer chain:
+        <code>IdempotencyFilter</code> → <code>SynchronizedSet</code> → <code>HashSet</code> → <code>HashMap</code> (<strong>399,975 entries</strong>)
+      </span>
+    </div>
+    <h3>Heap evidence</h3>
+    <pre>IdempotencyFilter
+   └─ Collections.SynchronizedSet
+        └─ HashSet
+             └─ HashMap   { size = 399 975, modCount = 399 975 }
+                  └─ Node[]   (61.6 MB)</pre>
+    <h3>Root cause</h3>
+    <p>A filter that records request idempotency keys into a process-local <code>Set</code> that grows monotonically — there is no eviction (no TTL, no LRU, no external store). After ~400k requests the set is 60 MB, then 120 MB, then OOM.</p>
+    <p><strong>Fix:</strong> bound the cache (Caffeine, Guava with <code>maximumSize</code> + <code>expireAfterWrite</code>) or move idempotency to an external store (Redis) with TTL.</p>
+  </section>
+
+  <!-- =================== LEAK 13 =================== -->
+  <section class="leak" id="l13">
+    <h2>Leak 13 — Hibernate Session L1-cache OOME
+        <span class="tag">heap-only</span>
+        <span class="file">Leak13_Hibernate_OOME.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>512&nbsp;MB</b></span>
+      <span>top retainer: <b>471&nbsp;MB</b></span>
+      <span>retainer: <code>org.hibernate.engine.internal.StatefulPersistenceContext</code></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>A single <code>StatefulPersistenceContext</code> retains 471 MB — that is <strong>92 % of the entire heap</strong>.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p><code>StatefulPersistenceContext</code> <em>is</em> Hibernate's first-level cache — every entity loaded by a Session is kept there until the Session/EntityManager is closed or <code>clear()</code>'d. A long-running transaction loaded a very large result set (<code>findAll()</code> on a huge table, or naïve pagination by iterating all rows) and never released the entities.</p>
+    <p><strong>Fix:</strong> use streaming queries with <code>EntityManager.clear()</code> every batch; use <code>Stateless­Session</code> for bulk reads; project to DTOs (<code>select new ...</code>) so JPA doesn't add to the L1 cache.</p>
+  </section>
+
+  <!-- =================== LEAK 14a =================== -->
+  <section class="leak" id="l14a">
+    <h2>Leak 14a — Classloader pinned by a surviving instance
+        <span class="tag">heap-only</span>
+        <span class="file">Leak14_ClassLoader-instanceRef.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>178&nbsp;MB</b></span>
+      <span>top retainers: <b>6 × ~20&nbsp;MB</b> <code>java.lang.Class</code> objects</span>
+      <span>retainer: <code>java.net.URLClassLoader</code> ×&nbsp;7 + <code>int[1_000_000]</code> statics</span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>7 <code>URLClassLoader</code> instances are alive.</li>
+      <li>6 <code>java.lang.Class</code> objects (one per plugin class) each retain ≈20&nbsp;MB — a static field of <code>int[1_000_000]</code> per class.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>The app loads plugin JARs into private <code>URLClassLoader</code>s and discards the loader when the plugin is unloaded. A <code>ClassLoader</code> is only GC-eligible when <em>every</em> instance of every class it defined is unreachable — because each instance silently holds its <code>.getClass().getClassLoader()</code>. A single surviving instance is enough to anchor the entire classloader (and all its statics) in memory.</p>
+    <p><strong>Fix:</strong> on plugin unload, audit any caches, listeners, or references that may still hold plugin-class instances; use weak references for plugin-supplied callbacks.</p>
+  </section>
+
+  <!-- =================== LEAK 14b =================== -->
+  <section class="leak" id="l14b">
+    <h2>Leak 14b — Classloader pinned by an un-cancelled <code>Timer</code>
+        <span class="tag">heap-only</span>
+        <span class="file">Leak14_ClassLoader-thread.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>157&nbsp;MB</b></span>
+      <span>top retainers: <b>5 × ~20&nbsp;MB</b> <code>java.lang.Class</code></span>
+      <span>retainer: 6 <code>URLClassLoader</code> + <strong>5 <code>java.util.TimerThread</code></strong></span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>6 alive <code>URLClassLoader</code> instances.</li>
+      <li><strong>5 <code>java.util.TimerThread</code> instances</strong> still running — one per "unloaded" plugin.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>Each plugin started a <code>java.util.Timer</code> in its initializer and never called <code>timer.cancel()</code> on shutdown. The resulting <code>TimerThread</code> keeps running and carries the plugin's <code>contextClassLoader</code> as a field — so the plugin's <code>URLClassLoader</code> can never be collected.</p>
+    <p><strong>Fix:</strong> always pair <code>new Timer()</code> with <code>timer.cancel()</code> in a teardown hook; better, use <code>ScheduledExecutorService</code> with explicit lifecycle and daemon threads.</p>
+  </section>
+
+  <!-- =================== LEAK 16 =================== -->
+  <section class="leak" id="l16">
+    <h2>Leak 16 — GUI observer never deregistered
+        <span class="tag">heap-only</span>
+        <span class="file">Leak16_GuiObserver.hprof</span>
+    </h2>
+    <div class="stats">
+      <span>heap total: <b>643&nbsp;MB</b></span>
+      <span>top retainer: <b>6 × ~105&nbsp;MB</b></span>
+      <span>retainer: <code>Leak16_GuiObserver$LeakyFrame</code> (extends <code>JFrame</code>)</span>
+    </div>
+    <h3>Heap evidence</h3>
+    <ul>
+      <li>Six instances of <code>LeakyFrame</code> survive — each holds a <code>big: Big100MB</code> field.</li>
+      <li>Each <code>LeakyFrame</code>'s <code>visible</code> flag is <code>false</code> — the windows were closed/disposed, yet they remain reachable.</li>
+    </ul>
+    <h3>Root cause</h3>
+    <p>The disposed-but-retained <code>JFrame</code>s are still subscribed to some long-lived "subject" (a model, a service, or Swing's per-AppContext event bus) via the observer pattern. The publisher's listener list keeps strong references to the frames; <code>dispose()</code> does not deregister them. Result: every "closed" window plus its 100 MB payload sticks around forever.</p>
+    <p><strong>Fix:</strong> deregister listeners in <code>windowClosing</code>/<code>dispose()</code>; or expose only weak listener references on the subject side (e.g., <code>WeakListenerList</code>, Guava <code>EventBus</code> with weak subscribers).</p>
+  </section>
+
+</main>
+
+<footer>
+  Generated from heap dumps by Claude Code + Eclipse MAT MCP — 13 of 13 leaks diagnosed without reading any source.
+</footer>
+
+</body>
+</html>

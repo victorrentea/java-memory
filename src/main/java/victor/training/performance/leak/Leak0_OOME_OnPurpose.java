@@ -8,9 +8,9 @@ import java.util.List;
 
 @RestController
 public class Leak0_OOME_OnPurpose {
+  List<int[]> boom = new ArrayList<>();
   @GetMapping("leak0")
   public String causeOOME() {
-    List<int[]> boom = new ArrayList<>();
     while (true) boom.add(new int[1000_000]);
 
     // TODO

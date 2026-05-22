@@ -4,6 +4,11 @@
       "type": "stdio",
       "command": "/Users/victorrentea/workspace/java-memory/mat-mcp/launch-mat-mcp.sh",
       "args": []
+    },
+    "heap-mcp-nb": {
+      "type": "stdio",
+      "command": "java",
+      "args": ["-jar", "/Users/victorrentea/workspace/heap_mcp_nb/target/heap_mcp_nb-1.0-SNAPSHOT.jar"]
     }
   }
 }

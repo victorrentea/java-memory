@@ -40,11 +40,11 @@ public class Leak5Lib_ThreadLocalCache {
 class Library {
   private static final Logger log = LoggerFactory.getLogger(Library.class);
 
+  private static final ThreadLocal<LibContext> threadLocal = new ThreadLocal<>();
+
   public static String method() {
     return "A bit of work using " + getContextCachedOnThread();
   }
-
-  private static final ThreadLocal<LibContext> threadLocal = new ThreadLocal<>();
 
   private static LibContext getContextCachedOnThread() {
     if (threadLocal.get() != null) {

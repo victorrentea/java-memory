@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +42,7 @@ public class Leak6_Async {
     MDC.put("traceId", "" + taskId);
     String data = fetchData(MB(10)); // or smaller files at a higher rate
     log.info("Got {} bytes", data.length());
-    CompletableFuture.runAsync(() -> processor.process(data, taskId));
+    processor.process(data, taskId);
     return """
         Long task submitted: #%d<br>
         Data now in memory: %,d bytes<br>
@@ -66,6 +67,7 @@ public class Leak6_Async {
 @Slf4j
 @Service
 class FileProcessor {
+  @Async
   public void process(String contents, int taskId) {
     log.debug("Task {} started ...", taskId);
     sleepSeconds(10);
