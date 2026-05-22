@@ -49,6 +49,7 @@ public class Leak2_Inner {
 class CalculatorFactory {
   private final Big20MB bigMac = new Big20MB(); // 🍔
 
+  // ☢️leaks ≤ javac 17
   public class Calculator {// TODO what's the connection with bigMac
     public String calculate() {
       return "Answer: " + 42;
@@ -59,25 +60,26 @@ class CalculatorFactory {
     return new Calculator();
   }
 
-  //<editor-fold desc="Lambdas vs Anonymous implementation">
+  //<editor-fold desc="Lambdas vs Anonymous implementation - ☢️leaks ≤ javac 17">
   public Stream<String> anonymousVsLambdas(List<String> input) {
     return input.stream()
-        .filter(new Predicate<String>() {
+        .filter(new Predicate<String>() { // = anonymous interface implementation
           @Override
           public boolean test(String s) {
             return !s.isBlank();
           }
         });
-    // TODO how about ->, ::
+    // TODO use ->
   }
   //</editor-fold>
 
-  //<editor-fold desc="Map init in Java <= 8">
+  //<editor-fold desc="Map init pre java 8">
   public Map<String, Integer> mapInit() {
     return new HashMap<>() {{
       put("one", 1);
       put("two", 2);
     }};
+    // TODO Map.of
   }
   //</editor-fold>
 }

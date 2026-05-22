@@ -14,7 +14,7 @@ public class Leak1_LongStackFrame {
 	public String endpoint() {
 		Big100MB bigDto = apiCall();
 		String a = bigDto.getA();
-		String b = bigDto.getA();
+		String b = bigDto.getB();
 
     log.info("Work only using {} and {} ...", a, b);
 		sleepSeconds(30); // time to take a heap dump
